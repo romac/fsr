@@ -1,9 +1,11 @@
 
 ## future exposition
 
-*24\_ Exposition collective avec Colette Hayoz (sculptrice) en octobre 2018 à l’Espace 52 à St Sulpice*
+*25\_Galerie Les 3 Soleils à Epesses du 9 au 30 juin 2019*
 
 ## expositions
+
+*24\_ Exposition collective avec Colette Hayoz (sculptrice) en octobre 2018 à l’Espace 52 à St Sulpice*
 
 *23\_ Exposition individuelle dès juin 2018 à La Couleur du Vin à Lausanne*
 
