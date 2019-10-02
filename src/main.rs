@@ -1,60 +1,97 @@
 #![recursion_limit = "256"]
 #![feature(proc_macro_hygiene, decl_macro)]
+#![allow(dead_code, unreachable_code, unused_imports, unused_variables)]
 
-extern crate rocket;
-extern crate rocket_contrib;
+mod data;
+mod db;
+mod load;
+mod prelude;
 
-extern crate typed_html;
-extern crate typed_html_macros;
+use std::thread;
+use std::time::Duration;
 
-use std::io::Cursor;
+use lazy_static::lazy_static;
 
-use rocket::http::{ContentType, Status};
-use rocket::response::{Responder, Result};
-use rocket::{get, routes, Request, Response};
+// use rocket::http::{ContentType, Status};
+// use rocket::response::{Responder, Result};
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::response::content::Html;
+use rocket::{get, routes, Rocket};
+use rocket::{Request, Response, State};
 use rocket_contrib::serve::{Options, StaticFiles};
 
-// use typed_html::types::LinkType;
-use typed_html::dom::DOMTree;
-use typed_html::elements::FlowContent;
-use typed_html::{html, text};
+use crate::db::Database;
+use crate::fairings::Db;
 
-struct Html(DOMTree<String>);
-
-impl<'r> Responder<'r> for Html {
-    fn respond_to(self, _request: &Request) -> Result<'r> {
-        Ok(Response::build()
-            .status(Status::Ok)
-            .header(ContentType::HTML)
-            .sized_body(Cursor::new(self.0.to_string()))
-            .finalize())
-    }
-}
-
-fn layout(content: Box<FlowContent<String>>) -> Html {
-    Html(html!(
-        <html>
-            <head>
-                <title>"fsr"</title>
-            </head>
-            <body>
-                {content}
-            </body>
-        </html>
-    ))
+lazy_static! {
+    static ref DB: Database = Database::new("_content");
 }
 
 #[get("/")]
-fn index() -> Html {
-    layout(html!(<h1>"Hello, world"</h1>))
+fn index(db: State<Db>) -> String {
+    let data = db.inner().as_ref().read(|data| data.clone());
+    format!("Data: {:?}", data)
 }
 
-fn main() {
-    let routes = routes![index];
-    let static_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/_static");
+#[get("/<page_slug>")]
+fn get_page(db: State<Db>, page_slug: String) -> Html<String> {
+    let page = db
+        .inner()
+        .as_ref()
+        .read(|data| data.find_page(&page_slug).cloned());
+
+    match page {
+        Some(page) => Html(page.html),
+        None => Html(format!("<h1>Page not found: /{}", page_slug)),
+    }
+}
+
+fn main() -> std::io::Result<()> {
+    let routes = routes![index, get_page];
 
     rocket::ignite()
-        .mount("/static", StaticFiles::new(static_dir, Options::None))
+        .attach(Db)
+        .manage(Db)
+        .mount("/static", StaticFiles::new("_static", Options::None))
         .mount("/", routes)
         .launch();
+
+    Ok(())
+}
+
+mod fairings {
+    use super::*;
+
+    #[derive(Clone, Copy)]
+    pub struct Db;
+
+    impl Db {
+        pub fn watch(&self) {
+            thread::spawn(move || loop {
+                DB.refresh();
+
+                thread::sleep(Duration::from_millis(1000));
+            });
+        }
+    }
+
+    impl AsRef<Database> for Db {
+        fn as_ref(&self) -> &Database {
+            &DB
+        }
+    }
+
+    impl Fairing for Db {
+        fn info(&self) -> Info {
+            Info {
+                name: "Database",
+                kind: Kind::Attach,
+            }
+        }
+
+        fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
+            self.watch();
+            Ok(rocket)
+        }
+    }
 }

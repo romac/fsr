@@ -1,3 +1,7 @@
+---
+index: 10
+title: expositions
+---
 
 ## future exposition
 

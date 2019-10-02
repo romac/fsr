@@ -1,3 +1,8 @@
+---
+index: 30
+title: contact
+---
+
 ## contact
 
 france schmid  

@@ -1,3 +1,8 @@
+---
+index: 20
+title: biographie
+---
+
 ## biographie
 
 C’est d’abord mon amour pour la poésie qui m’a conduite à la peinture !
