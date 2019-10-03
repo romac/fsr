@@ -1,6 +1,8 @@
-use crate::prelude::*;
+use std::path::{Path, PathBuf};
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+use serde::Serialize;
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Slug(String);
 
 impl Slug {
@@ -9,18 +11,18 @@ impl Slug {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Data {
-    pub pages: Vector<Page>,
-    pub categories: Vector<Category>,
+    pub pages: Vec<Page>,
+    pub categories: Vec<Category>,
     pub version: usize,
 }
 
 impl Data {
     pub fn empty() -> Self {
         Self {
-            pages: Vector::new(),
-            categories: Vector::new(),
+            pages: Vec::new(),
+            categories: Vec::new(),
             version: 0,
         }
     }
@@ -33,7 +35,7 @@ impl Data {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Page {
     pub index: usize,
     pub title: String,
@@ -43,30 +45,30 @@ pub struct Page {
     pub html: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Category {
     pub index: usize,
     pub name: String,
     pub slug: Slug,
     pub thumbnail: PathBuf,
-    pub sub_categories: Vector<SubCategory>,
+    pub sub_categories: Vec<SubCategory>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct SubCategory {
     pub index: usize,
     pub name: String,
     pub slug: Slug,
-    pub images: Vector<Image>,
+    pub images: Vec<Image>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Image {
     pub src: PathBuf,
     pub size: Size,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Size {
     pub width: usize,
     pub height: usize,

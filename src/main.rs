@@ -2,23 +2,26 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #![allow(dead_code, unreachable_code, unused_imports, unused_variables)]
 
+#[macro_use]
+extern crate serde_derive;
+
 mod data;
 mod db;
 mod load;
-mod prelude;
 
 use std::thread;
 use std::time::Duration;
 
 use lazy_static::lazy_static;
+use serde::Serialize;
 
-// use rocket::http::{ContentType, Status};
-// use rocket::response::{Responder, Result};
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::response::content::Html;
+use rocket::response::Responder;
 use rocket::{get, routes, Rocket};
 use rocket::{Request, Response, State};
 use rocket_contrib::serve::{Options, StaticFiles};
+use rocket_contrib::templates::Template;
 
 use crate::db::Database;
 use crate::fairings::Db;
@@ -28,21 +31,22 @@ lazy_static! {
 }
 
 #[get("/")]
-fn index(db: State<Db>) -> String {
+fn index(db: State<Db>) -> Template {
     let data = db.inner().as_ref().read(|data| data.clone());
-    format!("Data: {:?}", data)
+
+    Template::render("index", data)
 }
 
 #[get("/<page_slug>")]
-fn get_page(db: State<Db>, page_slug: String) -> Html<String> {
+fn get_page(db: State<Db>, page_slug: String) -> Template {
     let page = db
         .inner()
         .as_ref()
         .read(|data| data.find_page(&page_slug).cloned());
 
     match page {
-        Some(page) => Html(page.html),
-        None => Html(format!("<h1>Page not found: /{}", page_slug)),
+        Some(page) => Template::render("page", page),
+        None => unimplemented!(),
     }
 }
 
@@ -50,6 +54,7 @@ fn main() -> std::io::Result<()> {
     let routes = routes![index, get_page];
 
     rocket::ignite()
+        .attach(Template::fairing())
         .attach(Db)
         .manage(Db)
         .mount("/static", StaticFiles::new("_static", Options::None))

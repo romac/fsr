@@ -1,0 +1,9 @@
+{% extends "base" %}
+
+{% block content %}
+<div class="row">
+  <div class="twelve columns">
+    {{ html | safe }}
+  </div>
+</div>
+{% endblock content %}

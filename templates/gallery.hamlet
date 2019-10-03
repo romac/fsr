@@ -1,0 +1,8 @@
+<div .row>
+  <div .twelve columns>
+    <section>
+      <h2>
+        #{catTitle cat} - #{yearValue year}
+      <div #photos>
+        $forall img <- yearImages year
+          <img src=@{BigImage (imgSrc img)} alt="" width="#{fst (imgSize img)}" height="#{snd (imgSize img)}">

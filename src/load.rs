@@ -1,6 +1,6 @@
 use crate::data::*;
-use crate::prelude::*;
 
+use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use comrak::{markdown_to_html, ComrakOptions};
@@ -17,7 +17,7 @@ pub fn load_data<P: AsRef<Path>>(base_dir: P) -> io::Result<Data> {
     })
 }
 
-pub fn load_pages<P: AsRef<Path>>(dir: P) -> io::Result<Vector<Page>> {
+pub fn load_pages<P: AsRef<Path>>(dir: P) -> io::Result<Vec<Page>> {
     fs::read_dir(dir)?
         .map(|file| load_page(&file?.path()))
         .collect()
@@ -68,6 +68,6 @@ pub fn load_page(path: &Path) -> io::Result<Page> {
     Ok(page)
 }
 
-pub fn load_categories<P: AsRef<Path>>(dir: P) -> io::Result<Vector<Category>> {
-    Ok(Vector::new())
+pub fn load_categories<P: AsRef<Path>>(dir: P) -> io::Result<Vec<Category>> {
+    Ok(Vec::new())
 }

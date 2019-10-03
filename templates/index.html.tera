@@ -1,0 +1,14 @@
+{% extends "base" %}
+
+{% block title %}
+accueil
+{% endblock title %}
+
+{% block content %}
+<div class="row">
+  <div class="twelve columns">
+    TODO
+  </div>
+</div>
+{% endblock content %}
+

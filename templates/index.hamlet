@@ -1,0 +1,13 @@
+<div .row .gallery>
+  <div .twelve .columns>
+    <div .grid>
+      $forall cat <- categories
+        <div .category>
+          <h2>#{catTitle cat}
+          <ul .inline-list>
+            $forall year <- catYears cat
+              <li>
+                <a href=@{Gallery cat year}>
+                  <img src=@{Thumbnail cat year} alt="#{catTitle cat} - #{yearValue year}" width="100" height="100">
+                  <br>
+                  #{yearValue year}
