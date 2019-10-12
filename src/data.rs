@@ -67,14 +67,6 @@ pub struct Category {
     pub name: String,
     pub slug: Slug,
     pub thumbnail: PathBuf,
-    pub sub_categories: Vec<SubCategory>,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
-pub struct SubCategory {
-    pub index: usize,
-    pub name: String,
-    pub slug: Slug,
     pub images: Vec<Image>,
 }
 

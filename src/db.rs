@@ -32,7 +32,7 @@ impl Database {
     }
 
     pub fn refresh(&self) {
-        let new_data = load_data(&self.path).unwrap();
+        let new_data = load_data(&self.path);
 
         self.modify(move |data| {
             let version = data.version;
