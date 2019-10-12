@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use yaml_rust::Yaml;
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Slug(String);
@@ -32,6 +33,21 @@ impl Data {
             dbg!((&p.slug.0, slug));
             p.slug.0 == slug
         })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
+pub struct PageMetadata {
+    pub index: usize,
+    pub title: String,
+}
+
+impl PageMetadata {
+    pub fn from_yaml(yaml: Yaml) -> Option<Self> {
+        let hash = yaml.into_hash()?;
+        let index = hash.get(&Yaml::from_str("index"))?.as_i64()? as usize;
+        let title = hash.get(&Yaml::from_str("title"))?.as_str()?.to_string();
+        Some(Self { index, title })
     }
 }
 

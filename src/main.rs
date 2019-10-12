@@ -23,6 +23,7 @@ use rocket::{Request, Response, State};
 use rocket_contrib::serve::{Options, StaticFiles};
 use rocket_contrib::templates::Template;
 
+use crate::data::Page;
 use crate::db::Database;
 use crate::fairings::Db;
 
@@ -39,13 +40,27 @@ fn index(db: State<Db>) -> Template {
 
 #[get("/<page_slug>")]
 fn get_page(db: State<Db>, page_slug: String) -> Template {
+    let data = db.inner().as_ref().read(|data| data.clone());
+
     let page = db
         .inner()
         .as_ref()
         .read(|data| data.find_page(&page_slug).cloned());
 
+    #[derive(Clone, Serialize)]
+    struct Tmpl {
+        pages: Vec<Page>,
+        page: Page,
+    }
+
     match page {
-        Some(page) => Template::render("page", page),
+        Some(page) => {
+            let tmpl = Tmpl {
+                pages: data.pages,
+                page,
+            };
+            Template::render("page", tmpl)
+        }
         None => unimplemented!(),
     }
 }

@@ -28,24 +28,7 @@ pub fn load_page(path: &Path) -> io::Result<Page> {
     let (front, body) = frontmatter::parse_and_find_content(&contents)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-    // FIXME: Use a struct for metadata
-    let (index, title) = match front {
-        Some(front) => {
-            let hash = front.into_hash().unwrap();
-            (
-                hash.get(&Yaml::from_str("index"))
-                    .unwrap()
-                    .as_i64()
-                    .unwrap() as usize,
-                hash.get(&Yaml::from_str("title"))
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-                    .to_string(),
-            )
-        }
-        None => (99, "## missing frontmatter ##".to_string()),
-    };
+    let metadata = front.and_then(PageMetadata::from_yaml).unwrap(); // FIXME
 
     let opts = ComrakOptions {
         hardbreaks: true,
@@ -54,12 +37,12 @@ pub fn load_page(path: &Path) -> io::Result<Page> {
         ..ComrakOptions::default()
     };
 
-    let slug = Slug::new(&title);
+    let slug = Slug::new(&metadata.title);
 
     let page = Page {
-        index,
-        title,
-        slug,
+        slug: Slug::new(&metadata.title),
+        index: metadata.index,
+        title: metadata.title,
         path: path.to_owned(),
         content: body.to_string(),
         html: markdown_to_html(body, &opts).to_string(),
