@@ -86,7 +86,7 @@ mod fairings {
     pub struct Db;
 
     impl Db {
-        pub fn watch(&self) {
+        pub fn watch(self) {
             thread::spawn(move || loop {
                 DB.refresh();
 

@@ -21,11 +21,11 @@ pub fn load_pages<P: AsRef<Path>>(dir: P) -> Vec<Page> {
     fs::read_dir(dir)
         .map(|r| {
             r.flatten()
-                .map(|file| load_page(&file.path()))
-                .flatten()
+                .filter(|file| file.path().is_file())
+                .flat_map(|file| load_page(&file.path()))
                 .collect()
         })
-        .unwrap_or(Vec::new())
+        .unwrap_or_default()
 }
 
 pub fn load_page(path: &Path) -> Option<Page> {
@@ -49,23 +49,58 @@ pub fn load_page(path: &Path) -> Option<Page> {
         title: metadata.title,
         path: path.to_owned(),
         content: body.to_string(),
-        html: markdown_to_html(body, &opts).to_string(),
+        html: markdown_to_html(body, &opts),
     };
 
     Some(page)
 }
 
 pub fn load_categories<P: AsRef<Path>>(dir: P) -> Vec<Category> {
-    fs::read_dir(dir)
-        .map(|r| {
-            r.flatten()
-                .map(|file| load_category(&file.path()))
-                .flatten()
-                .collect()
-        })
-        .unwrap_or(Vec::new())
+    if let Ok(entries) = fs::read_dir(dir) {
+        entries
+            .flatten()
+            .filter(|e| e.path().is_dir())
+            .flat_map(|e| load_category(&e.path()))
+            .collect()
+    } else {
+        vec![]
+    }
+}
+
+pub fn is_image(p: &Path) -> bool {
+    p.is_file()
+        && match p.extension().map(|e| e.to_string_lossy().to_lowercase()) {
+            Some(ext) => ext == "jpg" || ext == "png" || ext == "jpeg",
+            _ => false,
+        }
 }
 
 pub fn load_category<P: AsRef<Path>>(dir: P) -> Option<Category> {
-    None
+    if let Ok(entries) = fs::read_dir(&dir) {
+        let images = entries
+            .flatten()
+            .filter(|e| is_image(&e.path()))
+            // .flat_map(|e| image::open(&e.path()))
+            .map(|e| Image {
+                src: e.path(),
+                size: Size {
+                    width: 0,
+                    height: 0,
+                },
+                year: 2019,
+                title: e.path().to_string_lossy().to_string(),
+                technique: "mixte".to_string(),
+            })
+            .collect::<Vec<_>>();
+
+        Some(Category {
+            index: 0,
+            name: dir.as_ref().to_string_lossy().to_string(),
+            slug: Slug::new(&dir.as_ref().to_string_lossy()),
+            thumbnail: dir.as_ref().to_path_buf(),
+            images,
+        })
+    } else {
+        None
+    }
 }

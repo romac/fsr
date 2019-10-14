@@ -74,6 +74,9 @@ pub struct Category {
 pub struct Image {
     pub src: PathBuf,
     pub size: Size,
+    pub year: usize,
+    pub title: String,
+    pub technique: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
