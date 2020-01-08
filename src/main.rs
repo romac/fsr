@@ -12,7 +12,7 @@ mod load;
 use std::thread;
 use std::time::Duration;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use serde::Serialize;
 
 use rocket::fairing::{Fairing, Info, Kind};
@@ -27,13 +27,13 @@ use crate::data::Page;
 use crate::db::Database;
 use crate::fairings::Db;
 
-lazy_static! {
-    static ref DB: Database = Database::new("_content");
-}
+static DB: Lazy<Database> = Lazy::new(|| Database::new("_content"));
 
 #[get("/")]
 fn index(db: State<Db>) -> Template {
     let data = db.inner().as_ref().read(|data| data.clone());
+
+    println!("{:?}", data.categories);
 
     Template::render("index", data)
 }
@@ -65,7 +65,7 @@ fn get_page(db: State<Db>, page_slug: String) -> Template {
     }
 }
 
-fn main() -> std::io::Result<()> {
+fn launch() -> std::io::Result<()> {
     let routes = routes![index, get_page];
 
     rocket::ignite()
@@ -79,6 +79,10 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
+fn main() -> std::io::Result<()> {
+    launch()
+}
+
 mod fairings {
     use super::*;
 
@@ -90,7 +94,7 @@ mod fairings {
             thread::spawn(move || loop {
                 DB.refresh();
 
-                thread::sleep(Duration::from_millis(1000));
+                thread::sleep(Duration::from_secs(30));
             });
         }
     }

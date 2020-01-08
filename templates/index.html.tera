@@ -1,7 +1,7 @@
 {% extends "base" %}
 
 {% block title %}
-accueil
+gallerie
 {% endblock title %}
 
 {% block content %}

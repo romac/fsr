@@ -29,7 +29,7 @@
           <nav>
             <ul class="inline-list" id="navigation">
               <li>
-                <a href="/">accueil</a>
+                <a href="/">gallerie</a>
               </li>
               {% for page in pages | sort(attribute="index") %}
               <li>

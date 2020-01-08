@@ -1,14 +1,27 @@
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use yaml_rust::Yaml;
 
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Slug(String);
 
 impl Slug {
     pub fn new(base: impl AsRef<str>) -> Self {
         Self(slug::slugify(base))
+    }
+}
+
+impl fmt::Debug for Slug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+impl fmt::Display for Slug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -72,6 +85,7 @@ pub struct Category {
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Image {
+    pub id: String,
     pub src: PathBuf,
     pub size: Size,
     pub year: usize,
@@ -83,4 +97,13 @@ pub struct Image {
 pub struct Size {
     pub width: usize,
     pub height: usize,
+}
+
+impl Default for Size {
+    fn default() -> Self {
+        Self {
+            width: 0,
+            height: 0,
+        }
+    }
 }

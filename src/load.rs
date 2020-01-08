@@ -4,11 +4,12 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use comrak::{markdown_to_html, ComrakOptions};
+use itertools::Itertools;
 use yaml_rust::yaml::Yaml;
 
 pub fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
     let pages = load_pages(base_dir.as_ref().join("pages"));
-    let categories = load_categories(base_dir.as_ref().join("categories"));
+    let categories = load_gallery(base_dir.as_ref().join("gallery.csv"));
 
     Data {
         pages,
@@ -55,52 +56,67 @@ pub fn load_page(path: &Path) -> Option<Page> {
     Some(page)
 }
 
-pub fn load_categories<P: AsRef<Path>>(dir: P) -> Vec<Category> {
-    if let Ok(entries) = fs::read_dir(dir) {
-        entries
-            .flatten()
-            .filter(|e| e.path().is_dir())
-            .flat_map(|e| load_category(&e.path()))
-            .collect()
-    } else {
-        vec![]
-    }
+#[derive(Clone, Debug)]
+struct Record {
+    id: String,
+    name: String,
+    theme: String,
 }
 
-pub fn is_image(p: &Path) -> bool {
-    p.is_file()
-        && match p.extension().map(|e| e.to_string_lossy().to_lowercase()) {
-            Some(ext) => ext == "jpg" || ext == "png" || ext == "jpeg",
-            _ => false,
+fn parse_row(mut record: csv::StringRecord) -> Option<Record> {
+    if record.len() < 3 {
+        return None;
+    }
+
+    record.trim();
+
+    let theme = record.get(0)?;
+    let name = record.get(1)?;
+    let id = record.get(2)?;
+
+    if theme.is_empty() || name.is_empty() || id.is_empty() {
+        return None;
+    }
+
+    Some(Record {
+        id: id.to_string(),
+        name: name.to_string(),
+        theme: theme.to_string(),
+    })
+}
+
+pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
+    let mut rdr = csv::Reader::from_path(csv_file).unwrap();
+    let records = rdr
+        .records()
+        .flat_map(|rc| rc.ok().and_then(parse_row))
+        .collect::<Vec<_>>();
+
+    let images = records.into_iter().map(|rec| {
+        let src = format!("_content/images/{}.jpg", rec.id);
+        Image {
+            id: rec.id,
+            src: PathBuf::from(src),
+            size: Size::default(),
+            year: 2020,
+            title: rec.name,
+            technique: rec.theme,
         }
-}
+    });
 
-pub fn load_category<P: AsRef<Path>>(dir: P) -> Option<Category> {
-    if let Ok(entries) = fs::read_dir(&dir) {
-        let images = entries
-            .flatten()
-            .filter(|e| is_image(&e.path()))
-            // .flat_map(|e| image::open(&e.path()))
-            .map(|e| Image {
-                src: e.path(),
-                size: Size {
-                    width: 0,
-                    height: 0,
-                },
-                year: 2019,
-                title: e.path().to_string_lossy().to_string(),
-                technique: "mixte".to_string(),
-            })
-            .collect::<Vec<_>>();
-
-        Some(Category {
+    let categories = images
+        .group_by(|i| i.technique.clone())
+        .into_iter()
+        .map(|(theme, images)| Category {
             index: 0,
-            name: dir.as_ref().to_string_lossy().to_string(),
-            slug: Slug::new(&dir.as_ref().to_string_lossy()),
-            thumbnail: dir.as_ref().to_path_buf(),
-            images,
+            slug: Slug::new(&theme),
+            name: theme,
+            thumbnail: PathBuf::new(),
+            images: images.collect(),
         })
-    } else {
-        None
-    }
+        .collect();
+
+    dbg!(&categories);
+
+    categories
 }
