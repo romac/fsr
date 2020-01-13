@@ -8,6 +8,7 @@ extern crate serde_derive;
 mod data;
 mod db;
 mod load;
+mod routes;
 
 use std::fs::File;
 use std::thread;
@@ -31,89 +32,8 @@ use crate::fairings::Db;
 
 static DB: Lazy<Database> = Lazy::new(|| Database::new("content"));
 
-#[get("/")]
-fn index(db: State<Db>) -> Template {
-    let data = db.inner().as_ref().read(|data| data.clone());
-    Template::render("index", data)
-}
-
-#[get("/<page_slug>")]
-fn get_page(db: State<Db>, page_slug: String) -> Template {
-    let data = db.inner().as_ref().read(|data| data.clone());
-
-    let page = db
-        .inner()
-        .as_ref()
-        .read(|data| data.find_page(&page_slug).cloned());
-
-    #[derive(Clone, Serialize)]
-    struct Tmpl {
-        pages: Vec<Page>,
-        page: Page,
-    }
-
-    match page {
-        Some(page) => {
-            let tmpl = Tmpl {
-                pages: data.pages,
-                page,
-            };
-            Template::render("page", tmpl)
-        }
-        None => unimplemented!(),
-    }
-}
-
-#[get("/theme/<theme_slug>")]
-fn get_theme(db: State<Db>, theme_slug: String) -> Template {
-    let (data, category) = db
-        .inner()
-        .as_ref()
-        .read(|data| (data.clone(), data.find_category(&theme_slug).cloned()));
-
-    #[derive(Clone, Serialize)]
-    struct Tmpl {
-        pages: Vec<Page>,
-        category: Category,
-    }
-
-    match category {
-        Some(category) => {
-            let data = Tmpl {
-                pages: data.pages,
-                category,
-            };
-            Template::render("theme", data)
-        }
-        None => todo!(),
-    }
-}
-
-#[get("/image/<slug>")]
-fn get_image(db: State<Db>, slug: String) -> Result<File, NotFound<String>> {
-    let path = format!("images/{}.jpg", slug);
-    File::open(&path).map_err(|e| NotFound(format!("Unknown image: {}", slug)))
-}
-
-#[get("/thumbnail/category/<slug>")]
-fn get_category_thumbnail(db: State<Db>, slug: String) -> Result<File, NotFound<String>> {
-    let first_image = db.inner().as_ref().read(|data| {
-        (data
-            .find_category(&slug)
-            .and_then(|c| c.images.first())
-            .cloned())
-    });
-
-    first_image
-        .ok_or_else(|| NotFound(format!("Unknown image: {}", slug)))
-        .and_then(|image| {
-            let path = format!("/images/{}.jpg", image.id);
-            File::open(&path).map_err(|e| NotFound(format!("Unknown image: {}", slug)))
-        })
-}
-
 fn launch() -> std::io::Result<()> {
-    let routes = routes![index, get_theme, get_page];
+    let routes = crate::routes::all();
 
     rocket::ignite()
         .attach(Template::fairing())
