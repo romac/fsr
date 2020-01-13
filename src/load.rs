@@ -101,7 +101,7 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         }
     });
 
-    let categories = images
+    images
         .group_by(|i| i.theme.clone())
         .into_iter()
         .map(|(theme, images)| Category {
@@ -109,7 +109,5 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
             name: theme,
             images: images.collect(),
         })
-        .collect();
-
-    categories
+        .collect()
 }

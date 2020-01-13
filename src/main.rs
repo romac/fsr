@@ -9,6 +9,7 @@ mod data;
 mod db;
 mod load;
 
+use std::fs::File;
 use std::thread;
 use std::time::Duration;
 
@@ -17,6 +18,7 @@ use serde::Serialize;
 
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::response::content::Html;
+use rocket::response::status::NotFound;
 use rocket::response::Responder;
 use rocket::{get, routes, Rocket};
 use rocket::{Request, Response, State};
@@ -83,8 +85,31 @@ fn get_theme(db: State<Db>, theme_slug: String) -> Template {
             };
             Template::render("theme", data)
         }
-        None => unimplemented!(),
+        None => todo!(),
     }
+}
+
+#[get("/image/<slug>")]
+fn get_image(db: State<Db>, slug: String) -> Result<File, NotFound<String>> {
+    let path = format!("images/{}.jpg", slug);
+    File::open(&path).map_err(|e| NotFound(format!("Unknown image: {}", slug)))
+}
+
+#[get("/thumbnail/category/<slug>")]
+fn get_category_thumbnail(db: State<Db>, slug: String) -> Result<File, NotFound<String>> {
+    let first_image = db.inner().as_ref().read(|data| {
+        (data
+            .find_category(&slug)
+            .and_then(|c| c.images.first())
+            .cloned())
+    });
+
+    first_image
+        .ok_or_else(|| NotFound(format!("Unknown image: {}", slug)))
+        .and_then(|image| {
+            let path = format!("/images/{}.jpg", image.id);
+            File::open(&path).map_err(|e| NotFound(format!("Unknown image: {}", slug)))
+        })
 }
 
 fn launch() -> std::io::Result<()> {
