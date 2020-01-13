@@ -42,10 +42,11 @@ impl Data {
     }
 
     pub fn find_page(&self, slug: &str) -> Option<&Page> {
-        self.pages.iter().find(|p| {
-            dbg!((&p.slug.0, slug));
-            p.slug.0 == slug
-        })
+        self.pages.iter().find(|p| p.slug == Slug::new(slug))
+    }
+
+    pub fn find_category(&self, slug: &str) -> Option<&Category> {
+        self.categories.iter().find(|c| c.slug == Slug::new(slug))
     }
 }
 
@@ -76,21 +77,16 @@ pub struct Page {
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Category {
-    pub index: usize,
     pub name: String,
     pub slug: Slug,
-    pub thumbnail: PathBuf,
     pub images: Vec<Image>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Image {
     pub id: String,
-    pub src: PathBuf,
-    pub size: Size,
-    pub year: usize,
     pub title: String,
-    pub technique: String,
+    pub theme: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]

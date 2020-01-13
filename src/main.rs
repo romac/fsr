@@ -23,18 +23,15 @@ use rocket::{Request, Response, State};
 use rocket_contrib::serve::{Options, StaticFiles};
 use rocket_contrib::templates::Template;
 
-use crate::data::Page;
+use crate::data::{Category, Page};
 use crate::db::Database;
 use crate::fairings::Db;
 
-static DB: Lazy<Database> = Lazy::new(|| Database::new("_site/content"));
+static DB: Lazy<Database> = Lazy::new(|| Database::new("content"));
 
 #[get("/")]
 fn index(db: State<Db>) -> Template {
     let data = db.inner().as_ref().read(|data| data.clone());
-
-    println!("{:?}", data.categories);
-
     Template::render("index", data)
 }
 
@@ -65,14 +62,39 @@ fn get_page(db: State<Db>, page_slug: String) -> Template {
     }
 }
 
+#[get("/theme/<theme_slug>")]
+fn get_theme(db: State<Db>, theme_slug: String) -> Template {
+    let (data, category) = db
+        .inner()
+        .as_ref()
+        .read(|data| (data.clone(), data.find_category(&theme_slug).cloned()));
+
+    #[derive(Clone, Serialize)]
+    struct Tmpl {
+        pages: Vec<Page>,
+        category: Category,
+    }
+
+    match category {
+        Some(category) => {
+            let data = Tmpl {
+                pages: data.pages,
+                category,
+            };
+            Template::render("theme", data)
+        }
+        None => unimplemented!(),
+    }
+}
+
 fn launch() -> std::io::Result<()> {
-    let routes = routes![index, get_page];
+    let routes = routes![index, get_theme, get_page];
 
     rocket::ignite()
         .attach(Template::fairing())
         .attach(Db)
         .manage(Db)
-        .mount("/static", StaticFiles::new("_site/static", Options::None))
+        .mount("/static", StaticFiles::new("static", Options::None))
         .mount("/", routes)
         .launch();
 

@@ -1,16 +1,16 @@
 {% extends "base" %}
 
 {% block title %}
-gallerie
+{{ category.name }}
 {% endblock title %}
 
 {% block content %}
 <div class="row small-up-1 medium-up-2 large-up-4">
-  {% for category in categories %}
+  {% for image in category.images %}
     <div class="column column-block">
-      <a href="/theme/{{ category.slug }}">
-        <span>{{ category.name }}</span>
-        <img src="/thumbnail/category/{{ category.slug }}" />
+      <a href="/image/{{ image.id }}">
+        <span>{{ image.title }}</span>
+        <img src="/image/{{ image.id }}" />
       </a>
     </div>
   {% endfor %}

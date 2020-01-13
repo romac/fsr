@@ -96,27 +96,20 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         let src = format!("_content/images/{}.jpg", rec.id);
         Image {
             id: rec.id,
-            src: PathBuf::from(src),
-            size: Size::default(),
-            year: 2020,
             title: rec.name,
-            technique: rec.theme,
+            theme: rec.theme,
         }
     });
 
     let categories = images
-        .group_by(|i| i.technique.clone())
+        .group_by(|i| i.theme.clone())
         .into_iter()
         .map(|(theme, images)| Category {
-            index: 0,
             slug: Slug::new(&theme),
             name: theme,
-            thumbnail: PathBuf::new(),
             images: images.collect(),
         })
         .collect();
-
-    dbg!(&categories);
 
     categories
 }
