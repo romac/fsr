@@ -27,7 +27,7 @@ use crate::data::Page;
 use crate::db::Database;
 use crate::fairings::Db;
 
-static DB: Lazy<Database> = Lazy::new(|| Database::new("_content"));
+static DB: Lazy<Database> = Lazy::new(|| Database::new("_site/content"));
 
 #[get("/")]
 fn index(db: State<Db>) -> Template {
@@ -72,7 +72,7 @@ fn launch() -> std::io::Result<()> {
         .attach(Template::fairing())
         .attach(Db)
         .manage(Db)
-        .mount("/static", StaticFiles::new("_static", Options::None))
+        .mount("/static", StaticFiles::new("_site/static", Options::None))
         .mount("/", routes)
         .launch();
 
