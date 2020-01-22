@@ -40,6 +40,7 @@ fn launch() -> std::io::Result<()> {
         .attach(Db)
         .manage(Db)
         .mount("/static", StaticFiles::new("static", Options::None))
+        .mount("/images", StaticFiles::new("content/images", Options::None))
         .mount("/", routes)
         .launch();
 

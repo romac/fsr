@@ -9,8 +9,8 @@
   {% for image in category.images %}
     <div class="column column-block">
       <a href="/image/{{ image.id }}">
-        <span>{{ image.title }}</span>
-        <img src="/image/{{ image.id }}" />
+        <span>{{ image.title }} - {{ image.year }}</span>
+        <img src="/images/{{ image.src }}" />
       </a>
     </div>
   {% endfor %}

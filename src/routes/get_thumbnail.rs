@@ -28,9 +28,9 @@ pub fn get_thumbnail(db: State<Db>, slug: String) -> Result<File, NotFound<Strin
     });
 
     first_image
-        .ok_or_else(|| NotFound(format!("Unknown image: {}", slug)))
+        .ok_or_else(|| NotFound(format!("Unknown category: {}", slug)))
         .and_then(|image| {
-            let path = format!("/images/{}.jpg", image.id);
-            File::open(&path).map_err(|e| NotFound(format!("Unknown image: {}", slug)))
+            let path = format!("content/images/{}", image.src);
+            File::open(&path).map_err(|e| NotFound(format!("Unknown image: {} ({})", path, e)))
         })
 }

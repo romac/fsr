@@ -59,7 +59,8 @@ pub fn load_page(path: &Path) -> Option<Page> {
 #[derive(Clone, Debug)]
 struct Record {
     id: String,
-    name: String,
+    title: String,
+    year: String,
     theme: String,
 }
 
@@ -71,16 +72,18 @@ fn parse_row(mut record: csv::StringRecord) -> Option<Record> {
     record.trim();
 
     let theme = record.get(0)?;
-    let name = record.get(1)?;
-    let id = record.get(2)?;
+    let id = record.get(1)?;
+    let year = record.get(2)?;
+    let title = record.get(3)?;
 
-    if theme.is_empty() || name.is_empty() || id.is_empty() {
+    if id.is_empty() {
         return None;
     }
 
     Some(Record {
         id: id.to_string(),
-        name: name.to_string(),
+        title: title.to_string(),
+        year: year.to_string(),
         theme: theme.to_string(),
     })
 }
@@ -92,16 +95,40 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         .flat_map(|rc| rc.ok().and_then(parse_row))
         .collect::<Vec<_>>();
 
+    let mut prev = Image {
+        id: "".to_string(),
+        title: "".to_string(),
+        year: "".to_string(),
+        theme: "".to_string(),
+        src: "".to_string(),
+    };
+
     let images = records.into_iter().map(|rec| {
-        let src = format!("_content/images/{}.jpg", rec.id);
-        Image {
+        let src = match get_src(&rec.id) {
+            Some(src) => src,
+            None => "not-found.jpg".to_string(),
+        };
+
+        let image = Image {
+            src,
             id: rec.id,
-            title: rec.name,
-            theme: rec.theme,
-        }
+            title: rec.title,
+            year: rec.year,
+            theme: if rec.theme.is_empty() {
+                prev.theme.clone()
+            } else {
+                rec.theme
+            },
+        };
+
+        prev = image.clone();
+
+        image
     });
 
-    images
+    dbg!(images.len());
+
+    let res = images
         .group_by(|i| i.theme.clone())
         .into_iter()
         .map(|(theme, images)| Category {
@@ -109,5 +136,23 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
             name: theme,
             images: images.collect(),
         })
-        .collect()
+        .collect();
+
+    dbg!(&res);
+
+    res
+}
+
+fn get_src(id: &str) -> Option<String> {
+    let exts = ["jpg", "tif"];
+
+    for ext in &exts {
+        let path = PathBuf::from(format!("content/images/{}.{}", id, ext));
+
+        if path.exists() {
+            return Some(format!("{}.{}", id, ext));
+        }
+    }
+
+    return None;
 }

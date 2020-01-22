@@ -85,21 +85,8 @@ pub struct Category {
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
 pub struct Image {
     pub id: String,
+    pub year: String,
     pub title: String,
     pub theme: String,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
-pub struct Size {
-    pub width: usize,
-    pub height: usize,
-}
-
-impl Default for Size {
-    fn default() -> Self {
-        Self {
-            width: 0,
-            height: 0,
-        }
-    }
+    pub src: String,
 }
