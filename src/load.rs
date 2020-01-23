@@ -100,17 +100,14 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         title: "".to_string(),
         year: "".to_string(),
         theme: "".to_string(),
-        src: "".to_string(),
+        ext: "".to_string(),
+        src: PathBuf::from(""),
     };
 
-    let images = records.into_iter().map(|rec| {
-        let src = match get_src(&rec.id) {
-            Some(src) => src,
-            None => "not-found.jpg".to_string(),
-        };
+    let images = records.into_iter().flat_map(|rec| {
+        let (src, ext) = get_src(&rec.id)?;
 
         let image = Image {
-            src,
             id: rec.id,
             title: rec.title,
             year: rec.year,
@@ -119,14 +116,14 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
             } else {
                 rec.theme
             },
+            src,
+            ext,
         };
 
         prev = image.clone();
 
-        image
+        Some(image)
     });
-
-    dbg!(images.len());
 
     let res = images
         .group_by(|i| i.theme.clone())
@@ -143,14 +140,14 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
     res
 }
 
-fn get_src(id: &str) -> Option<String> {
+fn get_src(id: &str) -> Option<(PathBuf, String)> {
     let exts = ["jpg", "tif"];
 
     for ext in &exts {
         let path = PathBuf::from(format!("content/images/{}.{}", id, ext));
 
         if path.exists() {
-            return Some(format!("{}.{}", id, ext));
+            return Some((path, ext.to_string()));
         }
     }
 

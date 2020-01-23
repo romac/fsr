@@ -88,5 +88,12 @@ pub struct Image {
     pub year: String,
     pub title: String,
     pub theme: String,
-    pub src: String,
+    pub ext: String,
+    pub src: PathBuf,
+}
+
+impl Image {
+    pub fn path(&self) -> String {
+        format!("{}.{}", self.id, self.ext)
+    }
 }

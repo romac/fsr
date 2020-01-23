@@ -10,7 +10,7 @@
     <div class="column column-block">
       <a href="/image/{{ image.id }}">
         <span>{{ image.title }} - {{ image.year }}</span>
-        <img src="/images/{{ image.src }}" />
+        <img src="/images/{{ image.id }}.{{ image.ext }}" />
       </a>
     </div>
   {% endfor %}
