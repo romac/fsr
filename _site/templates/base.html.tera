@@ -7,7 +7,7 @@
 
     <title>france schmid | {% block title %}{% endblock title %}</title>
 
-    <meta name="copyright" content="Copyright, France Schmid, 2006-2019">
+    <meta name="copyright" content="Copyright, France Schmid, 2006-2020">
     <meta name="keywords" content="france,schmid,ruetschi,galerie,aquarelle,peinture,artiste,croquis,montagne,lac">
 
     <link rel="stylesheet" href="/static/stylesheets/foundation.css">
@@ -45,7 +45,7 @@
 
       <div class="row">
         <footer class="twelve columns">
-          &copy; Copyright 2006-2019 France Schmid, tous droits réservés
+          &copy; Copyright 2006-2020 France Schmid, tous droits réservés
           <br>
           <br>
         </footer>
