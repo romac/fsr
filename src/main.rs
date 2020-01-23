@@ -23,6 +23,7 @@ use rocket::response::status::NotFound;
 use rocket::response::Responder;
 use rocket::{get, routes, Rocket};
 use rocket::{Request, Response, State};
+use rocket_contrib::compression::Compression;
 use rocket_contrib::serve::{Options, StaticFiles};
 use rocket_contrib::templates::Template;
 
@@ -39,6 +40,7 @@ fn launch() -> std::io::Result<()> {
         .attach(Template::fairing())
         .attach(Db)
         .manage(Db)
+        .attach(Compression::fairing())
         .mount("/static", StaticFiles::new("static", Options::None))
         .mount("/images", StaticFiles::new("content/images", Options::None))
         .mount("/", routes)
