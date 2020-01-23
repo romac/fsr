@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html class="no-js" lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>france schmid | {% block title %}{% endblock title %}</title>
 
@@ -12,45 +12,49 @@
 
     <link rel="stylesheet" href="/static/stylesheets/foundation.css">
     <link rel="stylesheet" href="/static/stylesheets/app.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa&display=swap">
   </head>
 
   <body>
-    <div id="container">
-      <header class="row">
-        <div class="twelve columns">
+    <div class="grid-container">
+      <header class="grid-x">
+        <div class="large-12 cell text-center">
           <h1>
             <a rel="home" href="/">france schmid</a>
           </h1>
         </div>
       </header>
 
-      <div class="row">
-        <div class="twelve columns">
-          <nav>
-            <ul class="inline-list" id="navigation">
-              <li>
-                <a href="/">gallerie</a>
-              </li>
-              {% for page in pages | sort(attribute="index") %}
-              <li>
-                <a href="/{{ page.slug }}">{{ page.title }}</a>
-              </li>
-              {% endfor %}
-            </ul>
-          </nav>
+      <nav class="grid-x">
+        <div class="large-12 cell">
+          <div class="title-bar" data-responsive-toggle="navigation" data-hide-for="medium">
+            <button class="menu-icon" type="button" data-toggle></button>
+            <div class="title-bar-title" data-toggle>Menu</div>
+          </div>
+          <ul class="menu align-center vertical medium-horizontal" id="navigation">
+            <li>
+              <a href="/">gallerie</a>
+            </li>
+            {% for page in pages | sort(attribute="index") %}
+            <li>
+              <a href="/{{ page.slug }}">{{ page.title }}</a>
+            </li>
+            {% endfor %}
+          </ul>
         </div>
-      </div>
+      </nav>
 
       {% block content %}{% endblock content %}
 
-      <div class="row">
-        <footer class="twelve columns">
+      <footer class="grid-x">
+        <div class="large-12 cell text-center">
           &copy; Copyright 2006-2020 France Schmid, tous droits réservés
-          <br>
-          <br>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
+
+    <script src="/static/javascripts/app.js"></script>
+    <script src="/static/javascripts/fslightbox.js"></script>
   </body>
 </html>
 
