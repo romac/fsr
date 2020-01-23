@@ -128,10 +128,14 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
     let res = images
         .group_by(|i| i.theme.clone())
         .into_iter()
-        .map(|(theme, images)| Category {
-            slug: Slug::new(&theme),
-            name: theme,
-            images: images.collect(),
+        .map(|(theme, imgs)| {
+            let images = imgs.collect::<Vec<_>>();
+            Category {
+                slug: Slug::new(&theme),
+                name: theme,
+                thumbnail: images.first().unwrap().clone(),
+                images,
+            }
         })
         .collect();
 

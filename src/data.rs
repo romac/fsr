@@ -79,6 +79,7 @@ pub struct Page {
 pub struct Category {
     pub name: String,
     pub slug: Slug,
+    pub thumbnail: Image,
     pub images: Vec<Image>,
 }
 

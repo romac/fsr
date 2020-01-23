@@ -10,7 +10,7 @@ gallerie
     <div class="column column-block">
       <a href="/theme/{{ category.slug }}">
         <span>{{ category.name }}</span>
-        <img src="/thumbnail/category/{{ category.slug }}" />
+        <img src="/images/{{ category.thumbnail.id }}.{{ category.thumbnail.ext }}" />
       </a>
     </div>
   {% endfor %}
