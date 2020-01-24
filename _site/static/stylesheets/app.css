@@ -1,19 +1,52 @@
 body {
   font-family: 'Comfortaa';
+  color: #333;
+  background-color: #eaeaea;
+  font-size: 18px;
 }
 
 h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
   font-family: 'Comfortaa';
 }
 
+h2, .h2 {
+  font-size: 2.0rem;
+}
+
 .grid-container {
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin: 0;
+  padding: 0 !important;
+}
+
+.grid-x {
+  padding: 0 40px;
+}
+
+header a, header a:hover, header a:focus,
+nav a, nav a:hover, nav a:focus {
+  color: white;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+header a:hover {
+  text-decoration: none;
+}
+
+header, nav {
+  background-color: #47413b;
+}
+
+header {
+  padding-top: 20px !important;
 }
 
 nav {
   margin-bottom: 20px;
   font-size: 1.4em;
+  padding-bottom: 20px !important;
 }
 
 nav .title-bar {
@@ -22,6 +55,16 @@ nav .title-bar {
 
 footer {
   margin-top: 20px;
+}
+
+.grid-x.page {
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.page p {
+  line-height: 1.7;
 }
 
 .images a {

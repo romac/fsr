@@ -16,9 +16,9 @@
   </head>
 
   <body>
-    <div class="grid-container">
-      <header class="grid-x">
-        <div class="large-12 cell text-center">
+    <div class="grid-container fluid">
+      <header class="grid-x text-center">
+        <div class="large-12 cell">
           <h1>
             <a rel="home" href="/">france schmid</a>
           </h1>
@@ -31,9 +31,9 @@
             <button class="menu-icon" type="button" data-toggle></button>
             <div class="title-bar-title" data-toggle>Menu</div>
           </div>
-          <ul class="menu align-center vertical medium-horizontal" id="navigation">
+          <ul class="menu align-center simple vertical medium-horizontal" id="navigation">
             <li>
-              <a href="/">gallerie</a>
+              <a href="/">galerie</a>
             </li>
             {% for page in pages | sort(attribute="index") %}
             <li>
@@ -46,8 +46,8 @@
 
       {% block content %}{% endblock content %}
 
-      <footer class="grid-x">
-        <div class="large-12 cell text-center">
+      <footer class="grid-x text-center">
+        <div class="large-12 cell">
           &copy; Copyright 2006-2020 France Schmid, tous droits réservés
         </div>
       </footer>
