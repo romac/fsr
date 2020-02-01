@@ -7,7 +7,6 @@ extern crate serde_derive;
 
 mod data;
 mod db;
-mod fairings;
 mod load;
 mod routes;
 
@@ -32,7 +31,6 @@ use rocket_contrib::templates::Template;
 
 use crate::data::{Category, Page};
 use crate::db::Database;
-use crate::fairings::Db;
 
 static DB_PATH: &str = "content";
 static DB: Lazy<Database> = Lazy::new(|| Database::new(DB_PATH));
@@ -73,4 +71,13 @@ fn launch() -> std::io::Result<()> {
 
 fn main() -> std::io::Result<()> {
     launch()
+}
+
+#[derive(Clone, Copy)]
+pub struct Db;
+
+impl AsRef<Database> for Db {
+    fn as_ref(&self) -> &Database {
+        &DB
+    }
 }

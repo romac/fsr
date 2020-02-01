@@ -16,7 +16,7 @@ use rocket_contrib::templates::Template;
 
 use crate::data::{Category, Page};
 use crate::db::Database;
-use crate::fairings::Db;
+use crate::Db;
 
 #[derive(Clone, Serialize)]
 struct Tmpl {
