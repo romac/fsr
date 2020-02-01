@@ -7,16 +7,19 @@ extern crate serde_derive;
 
 mod data;
 mod db;
+mod fairings;
 mod load;
 mod routes;
 
 use std::fs::File;
+use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
 use once_cell::sync::Lazy;
 use serde::Serialize;
 
+use hotwatch::Hotwatch;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::response::content::Html;
 use rocket::response::status::NotFound;
@@ -31,14 +34,19 @@ use crate::data::{Category, Page};
 use crate::db::Database;
 use crate::fairings::Db;
 
-static DB: Lazy<Database> = Lazy::new(|| Database::new("content"));
+static DB_PATH: &str = "content";
+static DB: Lazy<Database> = Lazy::new(|| Database::new(DB_PATH));
 
 fn launch() -> std::io::Result<()> {
     let routes = crate::routes::all();
 
+    let mut watcher = Hotwatch::new().unwrap();
+    watcher.watch(DB_PATH, |_| DB.refresh()).unwrap();
+
+    DB.refresh();
+
     rocket::ignite()
         .attach(Template::fairing())
-        .attach(Db)
         .manage(Db)
         .attach(Compression::fairing())
         .mount("/static", StaticFiles::new("static", Options::None))
@@ -51,41 +59,4 @@ fn launch() -> std::io::Result<()> {
 
 fn main() -> std::io::Result<()> {
     launch()
-}
-
-mod fairings {
-    use super::*;
-
-    #[derive(Clone, Copy)]
-    pub struct Db;
-
-    impl Db {
-        pub fn watch(self) {
-            thread::spawn(move || loop {
-                DB.refresh();
-
-                thread::sleep(Duration::from_secs(30));
-            });
-        }
-    }
-
-    impl AsRef<Database> for Db {
-        fn as_ref(&self) -> &Database {
-            &DB
-        }
-    }
-
-    impl Fairing for Db {
-        fn info(&self) -> Info {
-            Info {
-                name: "Database",
-                kind: Kind::Attach,
-            }
-        }
-
-        fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
-            self.watch();
-            Ok(rocket)
-        }
-    }
 }
