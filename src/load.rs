@@ -125,7 +125,7 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         Some(image)
     });
 
-    let res = images
+    images
         .group_by(|i| i.theme.clone())
         .into_iter()
         .map(|(theme, imgs)| {
@@ -137,11 +137,7 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
                 images,
             }
         })
-        .collect();
-
-    dbg!(&res);
-
-    res
+        .collect()
 }
 
 fn get_src(id: &str) -> Option<(PathBuf, String)> {
@@ -155,5 +151,5 @@ fn get_src(id: &str) -> Option<(PathBuf, String)> {
         }
     }
 
-    return None;
+    None
 }

@@ -41,7 +41,7 @@ fn launch() -> std::io::Result<()> {
     let routes = crate::routes::all();
 
     let mut watcher = Hotwatch::new().unwrap();
-    watcher.watch(DB_PATH, |_| DB.refresh()).unwrap();
+    watcher.watch(DB_PATH, |e| DB.refresh()).unwrap();
 
     DB.refresh();
 
