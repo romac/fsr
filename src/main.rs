@@ -43,7 +43,7 @@ fn launch() -> std::io::Result<()> {
     let mut watcher = Hotwatch::new().unwrap();
     watcher.watch(DB_PATH, |e| DB.refresh()).unwrap();
 
-    DB.refresh();
+    DB.force_refresh();
 
     rocket::ignite()
         .attach(Template::fairing())

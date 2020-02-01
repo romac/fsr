@@ -42,7 +42,6 @@ impl Database {
         let last_call = last_call_mutex.unwrap_or(now);
 
         let elapsed = now.duration_since(last_call);
-        dbg!(elapsed);
         *last_call_mutex = Some(now);
 
         if elapsed >= self.interval {
@@ -51,7 +50,7 @@ impl Database {
     }
 
     pub fn force_refresh(&self) {
-        eprintln!("[info] Refreshing content...");
+        println!("[info] Refreshing content...");
 
         let new_data = load_data(&self.path);
 
