@@ -10,7 +10,7 @@
     <meta name="copyright" content="Copyright, France Schmid, 2006-2020">
     <meta name="keywords" content="france,schmid,ruetschi,galerie,aquarelle,peinture,artiste,croquis,montagne,lac">
 
-    <link rel="stylesheet" href="/static/stylesheets/foundation.css">
+    <link rel="stylesheet" href="/static/stylesheets/foundation.min.css">
     <link rel="stylesheet" href="/static/stylesheets/app.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa&display=swap">
   </head>
@@ -55,7 +55,7 @@
       </footer>
     </div>
 
-    <script src="/static/javascripts/app.js"></script>
+    <script src="/static/javascripts/app.min.js"></script>
     <script src="/static/javascripts/fslightbox.js"></script>
   </body>
 </html>
