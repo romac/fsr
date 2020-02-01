@@ -30,10 +30,6 @@ hr {
   padding: 0 !important;
 }
 
-.grid-x {
-  padding: 0 30px;
-}
-
 header a, header a:hover, header a:focus,
 nav a, nav a:hover, nav a:focus {
   color: white;
@@ -56,7 +52,6 @@ header {
 }
 
 nav {
-  margin-bottom: 20px;
   font-size: 1.4em;
   padding-bottom: 20px !important;
 }
@@ -81,7 +76,7 @@ nav .title-bar .auto-center {
 
 footer {
   margin-top: 20px;
-  margin-bottom: 20px;
+  padding-bottom: 20px;
 }
 
 .grid-x.page {

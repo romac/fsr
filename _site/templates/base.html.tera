@@ -16,7 +16,7 @@
   </head>
 
   <body>
-    <div class="grid-container fluid">
+    <div class="grid-container full fluid">
       <header class="grid-x text-center">
         <div class="large-12 cell">
           <h1>
