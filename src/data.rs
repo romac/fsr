@@ -54,6 +54,7 @@ impl Data {
 pub struct PageMetadata {
     pub index: usize,
     pub title: String,
+    pub hidden: bool,
 }
 
 impl PageMetadata {
@@ -61,7 +62,16 @@ impl PageMetadata {
         let hash = yaml.into_hash()?;
         let index = hash.get(&Yaml::from_str("index"))?.as_i64()? as usize;
         let title = hash.get(&Yaml::from_str("title"))?.as_str()?.to_string();
-        Some(Self { index, title })
+        let hidden = hash
+            .get(&Yaml::from_str("hidden"))
+            .map(|h| h.as_bool().unwrap_or(false))
+            .unwrap_or(false);
+
+        Some(Self {
+            index,
+            title,
+            hidden,
+        })
     }
 }
 
@@ -70,6 +80,7 @@ pub struct Page {
     pub index: usize,
     pub title: String,
     pub slug: Slug,
+    pub hidden: bool,
     pub path: PathBuf,
     pub content: String,
     pub html: String,

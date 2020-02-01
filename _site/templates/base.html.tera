@@ -38,6 +38,7 @@
               <a href="/">galerie</a>
             </li>
             {% for page in pages | sort(attribute="index") %}
+            {% if page.hidden is true %}{% continue %}{% endif %}
             <li>
               <a href="/{{ page.slug }}">{{ page.title }}</a>
             </li>

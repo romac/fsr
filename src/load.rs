@@ -48,6 +48,7 @@ pub fn load_page(path: &Path) -> Option<Page> {
         slug: Slug::new(&metadata.title),
         index: metadata.index,
         title: metadata.title,
+        hidden: metadata.hidden,
         path: path.to_owned(),
         content: body.to_string(),
         html: markdown_to_html(body, &opts),
