@@ -45,6 +45,7 @@ impl Database {
         *last_call_mutex = Some(now);
 
         if elapsed >= self.interval {
+            std::thread::sleep(self.interval - elapsed);
             self.force_refresh();
         }
     }
