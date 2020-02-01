@@ -1,0 +1,17 @@
+{% extends "base" %}
+
+{% block title %}
+Page introuvable
+{% endblock title %}
+
+{% block content %}
+<div class="grid-x page">
+  <div class="large-12 cell">
+    <h2>Page introuvable</h2>
+    <p>
+      La page demand&eacute;e n'existe malheureusement pas.
+    </p>
+  </div>
+</div>
+{% endblock content %}
+

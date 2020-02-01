@@ -18,27 +18,25 @@ use crate::data::{Category, Page};
 use crate::db::Database;
 use crate::fairings::Db;
 
+#[derive(Clone, Serialize)]
+struct Tmpl {
+    pages: Vec<Page>,
+    category: Category,
+}
+
 #[get("/theme/<theme_slug>")]
-pub fn get_theme(db: State<Db>, theme_slug: String) -> Template {
+pub fn get_theme(db: State<Db>, theme_slug: String) -> Option<Template> {
     let (data, category) = db
         .inner()
         .as_ref()
         .read(|data| (data.clone(), data.find_category(&theme_slug).cloned()));
 
-    #[derive(Clone, Serialize)]
-    struct Tmpl {
-        pages: Vec<Page>,
-        category: Category,
-    }
+    category.map(|category| {
+        let data = Tmpl {
+            pages: data.pages,
+            category,
+        };
 
-    match category {
-        Some(category) => {
-            let data = Tmpl {
-                pages: data.pages,
-                category,
-            };
-            Template::render("theme", data)
-        }
-        None => todo!(),
-    }
+        Template::render("theme", data)
+    })
 }

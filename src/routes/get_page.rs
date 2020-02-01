@@ -18,8 +18,14 @@ use crate::data::{Category, Page};
 use crate::db::Database;
 use crate::fairings::Db;
 
+#[derive(Clone, Serialize)]
+struct Tmpl {
+    pages: Vec<Page>,
+    page: Page,
+}
+
 #[get("/<page_slug>")]
-pub fn get_page(db: State<Db>, page_slug: String) -> Template {
+pub fn get_page(db: State<Db>, page_slug: String) -> Option<Template> {
     let data = db.inner().as_ref().read(|data| data.clone());
 
     let page = db
@@ -27,20 +33,12 @@ pub fn get_page(db: State<Db>, page_slug: String) -> Template {
         .as_ref()
         .read(|data| data.find_page(&page_slug).cloned());
 
-    #[derive(Clone, Serialize)]
-    struct Tmpl {
-        pages: Vec<Page>,
-        page: Page,
-    }
+    page.map(|page| {
+        let tmpl = Tmpl {
+            pages: data.pages,
+            page,
+        };
 
-    match page {
-        Some(page) => {
-            let tmpl = Tmpl {
-                pages: data.pages,
-                page,
-            };
-            Template::render("page", tmpl)
-        }
-        None => unimplemented!(),
-    }
+        Template::render("page", tmpl)
+    })
 }

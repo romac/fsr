@@ -24,7 +24,7 @@ use rocket::fairing::{Fairing, Info, Kind};
 use rocket::response::content::Html;
 use rocket::response::status::NotFound;
 use rocket::response::Responder;
-use rocket::{get, routes, Rocket};
+use rocket::{catch, catchers, get, routes, Rocket};
 use rocket::{Request, Response, State};
 use rocket_contrib::compression::Compression;
 use rocket_contrib::serve::{Options, StaticFiles};
@@ -36,6 +36,19 @@ use crate::fairings::Db;
 
 static DB_PATH: &str = "content";
 static DB: Lazy<Database> = Lazy::new(|| Database::new(DB_PATH));
+
+#[catch(404)]
+fn not_found(req: &Request) -> Template {
+    let data = DB.read(|data| data.clone());
+
+    #[derive(Clone, Serialize)]
+    struct Tmpl {
+        pages: Vec<Page>,
+    }
+
+    let tmpl = Tmpl { pages: data.pages };
+    Template::render("not_found", tmpl)
+}
 
 fn launch() -> std::io::Result<()> {
     let routes = crate::routes::all();
@@ -52,6 +65,7 @@ fn launch() -> std::io::Result<()> {
         .mount("/static", StaticFiles::new("static", Options::None))
         .mount("/images", StaticFiles::new("content/images", Options::None))
         .mount("/", routes)
+        .register(catchers![not_found])
         .launch();
 
     Ok(())
