@@ -48,13 +48,20 @@ fn not_found(req: &Request) -> Template {
     Template::render("not_found", tmpl)
 }
 
+fn watch() {
+    thread::spawn(|| loop {
+        DB.force_refresh();
+        thread::sleep(Duration::from_secs(10));
+    });
+}
+
 fn launch() -> std::io::Result<()> {
     let routes = crate::routes::all();
 
-    let mut watcher = Hotwatch::new().unwrap();
-    watcher.watch(DB_PATH, |e| DB.refresh()).unwrap();
+    // let mut watcher = Hotwatch::new().unwrap();
+    // watcher.watch(DB_PATH, |e| DB.refresh()).unwrap();
 
-    DB.force_refresh();
+    watch();
 
     rocket::ignite()
         .attach(Template::fairing())

@@ -36,19 +36,17 @@ impl Database {
         f(&self.db.lock().unwrap())
     }
 
-    pub fn refresh(&self) {
-        let now = Instant::now();
-        let mut last_call_mutex = self.last_call.lock().unwrap();
-        let last_call = last_call_mutex.unwrap_or(now);
+    // pub fn refresh(&self) {
+    //     let now = Instant::now();
+    //     let mut last_call = self.last_call.lock().unwrap();
 
-        let elapsed = now.duration_since(last_call);
-        *last_call_mutex = Some(now);
+    //     let elapsed = now.duration_since(last_call.unwrap_or(now));
+    //     *last_call = Some(now);
 
-        if elapsed >= self.interval {
-            std::thread::sleep(self.interval - elapsed);
-            self.force_refresh();
-        }
-    }
+    //     if elapsed >= self.interval {
+    //         self.force_refresh();
+    //     }
+    // }
 
     pub fn force_refresh(&self) {
         println!("[info] Refreshing content...");
