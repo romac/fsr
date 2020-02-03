@@ -2,8 +2,12 @@
 cross:
 	cross build --release --target x86_64-unknown-linux-gnu
 
-sync:
-	rsync -azvhe ssh _site/ fsr:/home/fsr/
+pull-content:
+	rsync -azvhe ssh fsr:/home/fsr/content/ _site/content/ 
+
+push-templates:
+	rsync -azvhe ssh _site/templates/ fsr:/home/fsr/templates/
+	rsync -azvhe ssh _site/static/ fsr:/home/fsr/static/
 
 deploy:
 	scp target/x86_64-unknown-linux-gnu/release/fsr-rust fsr:/home/fsr/
@@ -20,7 +24,6 @@ reload:
 
 full:
 	$(MAKE) cross
-	$(MAKE) sync
 	$(MAKE) stop
 	$(MAKE) deploy
 	$(MAKE) start
@@ -28,11 +31,12 @@ full:
 
 help:
 	@echo make cross
-	@echo make sync
+	@echo make pull-content
+	@echo make push-templates
 	@echo make stop
 	@echo make deploy
 	@echo make start
 	@echo make reload
 
-.PHONY: cross sync deploy stop start reload full help
+.PHONY: cross pull-content push-templates deploy stop start reload full help
 
