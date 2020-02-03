@@ -26,5 +26,13 @@ full:
 	$(MAKE) start
 	$(MAKE) reload
 
-.PHONY: cross sync deploy stop start reload full
+help:
+	@echo make cross
+	@echo make sync
+	@echo make stop
+	@echo make deploy
+	@echo make start
+	@echo make reload
+
+.PHONY: cross sync deploy stop start reload full help
 
