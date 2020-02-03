@@ -90,7 +90,12 @@ fn parse_row(mut record: csv::StringRecord) -> Option<Record> {
 }
 
 pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
-    let mut rdr = csv::Reader::from_path(csv_file).unwrap();
+    // let mut rdr = csv::Reader::from_path(csv_file).unwrap();
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b';')
+        .from_path(csv_file)
+        .unwrap();
+
     let records = rdr
         .records()
         .flat_map(|rc| rc.ok().and_then(parse_row))
