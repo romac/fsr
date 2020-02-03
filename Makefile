@@ -8,8 +8,23 @@ sync:
 deploy:
 	scp target/x86_64-unknown-linux-gnu/release/fsr-rust fsr:/home/fsr/
 
-reload:
-	ssh -t fsr 'tmux send-keys -t fsr C-c ENTER ./fsr-rust ENTER'
+stop:
+	ssh -t fsr 'tmux send-keys -t fsr C-c ENTER'
 
-.PHONY: cross sync deploy reload
+start:
+	ssh -t fsr 'tmux send-keys -t fsr ./fsr-rust ENTER'
+
+reload:
+	$(MAKE) stop
+	$(MAKE) start
+
+full:
+	$(MAKE) cross
+	$(MAKE) sync
+	$(MAKE) stop
+	$(MAKE) deploy
+	$(MAKE) start
+	$(MAKE) reload
+
+.PHONY: cross sync deploy stop start reload full
 
