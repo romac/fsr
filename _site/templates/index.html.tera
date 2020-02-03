@@ -1,7 +1,7 @@
 {% extends "base" %}
 
 {% block title %}
-gallerie
+artiste-peintre
 {% endblock title %}
 
 {% block content %}

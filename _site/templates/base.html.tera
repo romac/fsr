@@ -16,6 +16,7 @@
   </head>
 
   <body>
+    <a id="top" />
     <div class="grid-container full fluid">
       <header class="grid-x text-center">
         <div class="large-12 cell">
@@ -50,6 +51,9 @@
       {% block content %}{% endblock content %}
 
       <footer class="grid-x text-center">
+        <div class="large-12 cell back-to-top">
+          <a href="#top">↑ Retour en haut</a>
+        </div>
         <div class="large-12 cell">
           &copy; Copyright 2006-2020 France Schmid, tous droits réservés
         </div>
