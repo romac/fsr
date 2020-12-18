@@ -1,23 +1,26 @@
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use std::{
+    path::{Path, PathBuf},
+    sync::RwLock,
+};
 
 use crate::data::*;
 use crate::load::load_data;
 
 pub struct Database {
-    db: Arc<Mutex<Data>>,
+    db: Arc<RwLock<Data>>,
     path: PathBuf,
-    last_call: Arc<Mutex<Option<Instant>>>,
+    last_call: Arc<RwLock<Option<Instant>>>,
     interval: Duration,
 }
 
 impl Database {
     pub fn new<P: Into<PathBuf>>(path: P) -> Self {
         Database {
-            db: Arc::new(Mutex::new(Data::empty())),
+            db: Arc::new(RwLock::new(Data::empty())),
             path: path.into(),
-            last_call: Arc::new(Mutex::new(None)),
+            last_call: Arc::new(RwLock::new(None)),
             interval: Duration::from_secs(5),
         }
     }
@@ -26,14 +29,14 @@ impl Database {
     where
         F: FnOnce(&mut Data),
     {
-        f(&mut self.db.lock().unwrap())
+        f(&mut self.db.write().unwrap())
     }
 
     pub fn read<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&Data) -> R,
     {
-        f(&self.db.lock().unwrap())
+        f(&self.db.read().unwrap())
     }
 
     // pub fn refresh(&self) {

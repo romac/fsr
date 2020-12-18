@@ -32,15 +32,13 @@ pub fn load_pages<P: AsRef<Path>>(dir: P) -> Vec<Page> {
 pub fn load_page(path: &Path) -> Option<Page> {
     let contents = fs::read_to_string(path).ok()?;
     let (front, body) = frontmatter::parse_and_find_content(&contents).ok()?;
+    let metadata = PageMetadata::from_yaml(front?)?;
 
-    let metadata = front.and_then(PageMetadata::from_yaml)?;
-
-    let opts = ComrakOptions {
-        hardbreaks: true,
-        smart: true,
-        ext_autolink: true,
-        ..ComrakOptions::default()
-    };
+    let mut opts = ComrakOptions::default();
+    opts.parse.smart = true;
+    opts.render.hardbreaks = true;
+    opts.extension.autolink = true;
+    opts.extension.header_ids = Some("header-".to_string());
 
     let slug = Slug::new(&metadata.title);
 
@@ -96,10 +94,7 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         .from_path(csv_file)
         .unwrap();
 
-    let records = rdr
-        .records()
-        .flat_map(|rc| rc.ok().and_then(parse_row))
-        .collect::<Vec<_>>();
+    let records = rdr.records().flat_map(|rc| rc.ok().and_then(parse_row));
 
     let mut prev = Image {
         id: "".to_string(),
@@ -110,7 +105,7 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         src: PathBuf::from(""),
     };
 
-    let images = records.into_iter().flat_map(|rec| {
+    let images = records.flat_map(|rec| {
         let (src, ext) = get_src(&rec.id)?;
 
         let image = Image {

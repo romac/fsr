@@ -1,22 +1,12 @@
-use std::fs::File;
-use std::thread;
-use std::time::Duration;
+use serde_derive::Serialize;
+use tide::{Error, Request, Response};
+use tide_tera::TideTeraExt;
 
-use once_cell::sync::Lazy;
-use serde::Serialize;
-
-use rocket::fairing::{Fairing, Info, Kind};
-use rocket::response::content::Html;
-use rocket::response::status::NotFound;
-use rocket::response::Responder;
-use rocket::{get, routes, Rocket};
-use rocket::{Request, Response, State};
-use rocket_contrib::serve::{Options, StaticFiles};
-use rocket_contrib::templates::Template;
-
-use crate::data::{Category, Page};
-use crate::db::Database;
-use crate::Db;
+use crate::{
+    data::{Category, Page},
+    db::Database,
+    Db, State,
+};
 
 #[derive(Clone, Serialize)]
 struct Tmpl {
@@ -24,19 +14,28 @@ struct Tmpl {
     category: Category,
 }
 
-#[get("/theme/<theme_slug>")]
-pub fn get_theme(db: State<Db>, theme_slug: String) -> Option<Template> {
-    let (data, category) = db
-        .inner()
-        .as_ref()
-        .read(|data| (data.clone(), data.find_category(&theme_slug).cloned()));
+pub async fn get_theme(req: Request<State>) -> tide::Result<tide::Response> {
+    let state = req.state();
+    let theme_slug = req.param("theme")?;
 
-    category.map(|category| {
-        let data = Tmpl {
+    let (data, category) = state
+        .db
+        .as_ref()
+        .read(|data| (data.clone(), data.find_category(theme_slug).cloned()));
+
+    if let Some(category) = category {
+        let tmpl = Tmpl {
             pages: data.pages,
             category,
         };
 
-        Template::render("theme", data)
-    })
+        state
+            .tera
+            .render_response("theme.html", &tera::Context::from_serialize(tmpl)?)
+    } else {
+        Err(Error::from_str(
+            tide::StatusCode::NotFound,
+            "page introuvable",
+        ))
+    }
 }

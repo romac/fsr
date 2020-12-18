@@ -1,22 +1,12 @@
-use std::fs::File;
-use std::thread;
-use std::time::Duration;
+use serde_derive::Serialize;
+use tide::{Error, Request, Response};
+use tide_tera::TideTeraExt;
 
-use once_cell::sync::Lazy;
-use serde::Serialize;
-
-use rocket::fairing::{Fairing, Info, Kind};
-use rocket::response::content::Html;
-use rocket::response::status::NotFound;
-use rocket::response::Responder;
-use rocket::{get, routes, Rocket};
-use rocket::{Request, Response, State};
-use rocket_contrib::serve::{Options, StaticFiles};
-use rocket_contrib::templates::Template;
-
-use crate::data::{Category, Page};
-use crate::db::Database;
-use crate::Db;
+use crate::{
+    data::{Category, Page},
+    db::Database,
+    Db, State,
+};
 
 #[derive(Clone, Serialize)]
 struct Tmpl {
@@ -24,21 +14,27 @@ struct Tmpl {
     page: Page,
 }
 
-#[get("/<page_slug>")]
-pub fn get_page(db: State<Db>, page_slug: String) -> Option<Template> {
-    let data = db.inner().as_ref().read(|data| data.clone());
+pub async fn get_page(req: Request<State>) -> Result<Response, Error> {
+    let state = req.state();
 
-    let page = db
-        .inner()
-        .as_ref()
-        .read(|data| data.find_page(&page_slug).cloned());
+    let data = state.db.as_ref().read(|data| data.clone());
 
-    page.map(|page| {
+    let page_slug = req.param("page")?;
+    let page = data.find_page(page_slug).cloned();
+
+    if let Some(page) = page {
         let tmpl = Tmpl {
             pages: data.pages,
             page,
         };
 
-        Template::render("page", tmpl)
-    })
+        state
+            .tera
+            .render_response("page.html", &tera::Context::from_serialize(tmpl)?)
+    } else {
+        Err(Error::from_str(
+            tide::StatusCode::NotFound,
+            "page introuvable",
+        ))
+    }
 }

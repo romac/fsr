@@ -1,7 +1,7 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
 
-use serde::{Deserialize, Serialize};
+use serde_derive::Serialize;
 use yaml_rust::Yaml;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
