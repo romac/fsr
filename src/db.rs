@@ -1,65 +1,75 @@
-use std::sync::{Arc, Mutex};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::{
-    path::{Path, PathBuf},
-    sync::RwLock,
-};
+
+use async_std::sync::RwLock;
 
 use crate::data::*;
 use crate::load::load_data;
 
 pub struct Database {
-    db: Arc<RwLock<Data>>,
+    db: RwLock<Data>,
     path: PathBuf,
-    last_call: Arc<RwLock<Option<Instant>>>,
     interval: Duration,
+    last_refreshed: RwLock<Option<Instant>>,
 }
 
 impl Database {
     pub fn new<P: Into<PathBuf>>(path: P) -> Self {
         Database {
-            db: Arc::new(RwLock::new(Data::empty())),
+            db: RwLock::new(Data::empty()),
             path: path.into(),
-            last_call: Arc::new(RwLock::new(None)),
             interval: Duration::from_secs(5),
+            last_refreshed: RwLock::new(None),
         }
     }
 
-    pub fn modify<F>(&self, f: F)
+    pub async fn modify<F>(&self, f: F)
     where
         F: FnOnce(&mut Data),
     {
-        f(&mut self.db.write().unwrap())
+        let data = &mut *self.db.write().await;
+        f(data)
     }
 
-    pub fn read<F, R>(&self, f: F) -> R
+    pub async fn read<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&Data) -> R,
     {
-        f(&self.db.read().unwrap())
+        f(&*self.db.read().await)
     }
 
-    // pub fn refresh(&self) {
-    //     let now = Instant::now();
-    //     let mut last_call = self.last_call.lock().unwrap();
+    pub async fn refresh(&self) {
+        let now = Instant::now();
 
-    //     let elapsed = now.duration_since(last_call.unwrap_or(now));
-    //     *last_call = Some(now);
+        let elapsed = {
+            let last_refreshed = self.last_refreshed.read().await;
+            last_refreshed.map(|lr| now.duration_since(lr))
+        };
 
-    //     if elapsed >= self.interval {
-    //         self.force_refresh();
-    //     }
-    // }
+        {
+            let mut last_refreshed = self.last_refreshed.write().await;
+            *last_refreshed = Some(now);
+        }
 
-    pub fn force_refresh(&self) {
+        match elapsed {
+            Some(elapsed) if elapsed >= self.interval => self.force_refresh().await,
+            None => self.force_refresh().await,
+            _ => (),
+        }
+    }
+
+    pub async fn force_refresh(&self) {
         println!("[info] Refreshing content...");
 
-        let new_data = load_data(&self.path);
+        let version = self.db.read().await.version;
 
-        self.modify(move |data| {
-            let version = data.version;
+        let mut new_data = load_data(&self.path).await;
+        new_data.version = version + 1;
+
+        self.modify(|data| {
             *data = new_data;
-            data.version = version + 1;
-        });
+        })
+        .await;
     }
 }

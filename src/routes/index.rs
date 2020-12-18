@@ -5,7 +5,7 @@ use crate::State;
 
 pub async fn index(req: Request<State>) -> Result<Response, Error> {
     let state = req.state();
-    let data = state.db.as_ref().read(|data| data.clone());
+    let data = state.db.as_ref().read(|data| data.clone()).await;
 
     state
         .tera

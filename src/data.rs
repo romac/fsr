@@ -1,5 +1,6 @@
 use std::fmt;
-use std::path::{Path, PathBuf};
+
+use async_std::path::PathBuf;
 
 use serde_derive::Serialize;
 use yaml_rust::Yaml;
@@ -81,6 +82,7 @@ pub struct Page {
     pub title: String,
     pub slug: Slug,
     pub hidden: bool,
+    #[serde(with = "serde_pathbuf")]
     pub path: PathBuf,
     pub content: String,
     pub html: String,
@@ -100,12 +102,25 @@ pub struct Image {
     pub year: String,
     pub title: String,
     pub theme: String,
-    pub ext: String,
+    pub ext: &'static str,
+    #[serde(with = "serde_pathbuf")]
     pub src: PathBuf,
 }
 
 impl Image {
     pub fn path(&self) -> String {
         format!("{}.{}", self.id, self.ext)
+    }
+}
+
+pub(crate) mod serde_pathbuf {
+    use async_std::path::PathBuf;
+    use serde::{Serialize, Serializer};
+
+    pub fn serialize<S>(path: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        std::path::Path::serialize(path.as_path().into(), serializer)
     }
 }

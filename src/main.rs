@@ -12,10 +12,12 @@ use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
+use async_std::prelude::FutureExt;
+use async_std::task;
+
 use once_cell::sync::Lazy;
 use serde::Serialize;
 
-use hotwatch::Hotwatch;
 use tera::Tera;
 use tide_compress::CompressMiddleware;
 
@@ -26,29 +28,6 @@ static DB_PATH: &str = "content";
 static TEMPLATES_PATH: &str = "template";
 
 static DB: Lazy<Database> = Lazy::new(|| Database::new(DB_PATH));
-
-// #[catch(404)]
-// fn not_found(req: &Request) -> Template {
-//     let data = DB.read(|data| data.clone());
-
-//     #[derive(Clone, Serialize)]
-//     struct Tmpl {
-//         pages: Vec<Page>,
-//     }
-
-//     let tmpl = Tmpl { pages: data.pages };
-//     Template::render("not_found", tmpl)
-// }
-
-fn watch() {
-    // let mut watcher = Hotwatch::new().unwrap();
-    // watcher.watch(DB_PATH, |e| DB.refresh()).unwrap();
-
-    async_std::task::spawn_blocking(|| loop {
-        DB.force_refresh();
-        thread::sleep(Duration::from_secs(10));
-    });
-}
 
 #[derive(Clone, Copy)]
 pub struct Db;
@@ -65,12 +44,7 @@ pub struct State {
     pub tera: Tera,
 }
 
-#[async_std::main]
-async fn main() -> tide::Result<()> {
-    watch();
-
-    // tide::log::start();
-
+async fn launch() -> tide::Result<()> {
     let mut tera = Tera::new("templates/**/*")?;
     tera.autoescape_on(vec!["html"]);
 
@@ -86,7 +60,22 @@ async fn main() -> tide::Result<()> {
     app.at("/static").serve_dir("static")?;
     app.at("/images").serve_dir("content/images")?;
 
+    app.at("*").all(routes::not_found);
+
     app.listen("127.0.0.1:8081").await?;
 
     Ok(())
+}
+
+#[async_std::main]
+async fn main() -> tide::Result<()> {
+    tide::log::start();
+
+    DB.force_refresh().await;
+
+    task::spawn(launch());
+
+    loop {
+        DB.force_refresh().delay(Duration::from_secs(5)).await;
+    }
 }

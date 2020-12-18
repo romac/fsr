@@ -1,18 +1,12 @@
 use serde_derive::Serialize;
 use tide::{Error, Request, Response};
-use tide_tera::TideTeraExt;
+use tide_tera::prelude::*;
 
 use crate::{
     data::{Category, Page},
     db::Database,
     Db, State,
 };
-
-#[derive(Clone, Serialize)]
-struct Tmpl {
-    pages: Vec<Page>,
-    category: Category,
-}
 
 pub async fn get_theme(req: Request<State>) -> tide::Result<tide::Response> {
     let state = req.state();
@@ -21,21 +15,18 @@ pub async fn get_theme(req: Request<State>) -> tide::Result<tide::Response> {
     let (data, category) = state
         .db
         .as_ref()
-        .read(|data| (data.clone(), data.find_category(theme_slug).cloned()));
+        .read(|data| (data.clone(), data.find_category(theme_slug).cloned()))
+        .await;
 
     if let Some(category) = category {
-        let tmpl = Tmpl {
-            pages: data.pages,
-            category,
-        };
-
-        state
-            .tera
-            .render_response("theme.html", &tera::Context::from_serialize(tmpl)?)
+        state.tera.render_response(
+            "theme.html",
+            &context! {
+                "pages" => data.pages,
+                "category" => category,
+            },
+        )
     } else {
-        Err(Error::from_str(
-            tide::StatusCode::NotFound,
-            "page introuvable",
-        ))
+        crate::routes::not_found(req).await
     }
 }

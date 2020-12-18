@@ -1,15 +1,21 @@
-use crate::data::*;
+use async_std::{
+    fs::{self, File},
+    path::{Path, PathBuf},
+    stream::Stream,
+    task,
+};
 
-use std::path::{Path, PathBuf};
-use std::{fs, io};
+use futures::StreamExt;
 
 use comrak::{markdown_to_html, ComrakOptions};
 use itertools::Itertools;
 use yaml_rust::yaml::Yaml;
 
-pub fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
-    let pages = load_pages(base_dir.as_ref().join("pages"));
-    let categories = load_gallery(base_dir.as_ref().join("gallery.csv"));
+use crate::data::*;
+
+pub async fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
+    let pages = load_pages(base_dir.as_ref().join("pages")).await;
+    let categories = load_gallery(base_dir.as_ref().join("gallery.csv")).await;
 
     Data {
         pages,
@@ -18,19 +24,28 @@ pub fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
     }
 }
 
-pub fn load_pages<P: AsRef<Path>>(dir: P) -> Vec<Page> {
-    fs::read_dir(dir)
-        .map(|r| {
-            r.flatten()
-                .filter(|file| file.path().is_file())
-                .flat_map(|file| load_page(&file.path()))
-                .collect()
-        })
-        .unwrap_or_default()
+pub async fn load_pages<P: AsRef<Path>>(dir: P) -> Vec<Page> {
+    let mut read_dir = fs::read_dir(dir).await.unwrap();
+
+    let mut pages = vec![];
+    while let Some(entry) = read_dir.next().await {
+        if let Ok(entry) = entry {
+            if !entry.path().is_file().await {
+                continue;
+            }
+
+            let page = load_page(&entry.path()).await;
+            if let Some(page) = page {
+                pages.push(page);
+            }
+        }
+    }
+
+    pages
 }
 
-pub fn load_page(path: &Path) -> Option<Page> {
-    let contents = fs::read_to_string(path).ok()?;
+pub async fn load_page(path: impl AsRef<Path>) -> Option<Page> {
+    let contents = fs::read_to_string(path.as_ref()).await.ok()?;
     let (front, body) = frontmatter::parse_and_find_content(&contents).ok()?;
     let metadata = PageMetadata::from_yaml(front?)?;
 
@@ -47,7 +62,7 @@ pub fn load_page(path: &Path) -> Option<Page> {
         index: metadata.index,
         title: metadata.title,
         hidden: metadata.hidden,
-        path: path.to_owned(),
+        path: path.as_ref().to_owned(),
         content: body.to_string(),
         html: markdown_to_html(body, &opts),
     };
@@ -63,12 +78,10 @@ struct Record {
     theme: String,
 }
 
-fn parse_row(mut record: csv::StringRecord) -> Option<Record> {
+fn parse_row(record: csv_async::StringRecord) -> Option<Record> {
     if record.len() < 3 {
         return None;
     }
-
-    record.trim();
 
     let theme = record.get(0)?;
     let id = record.get(1)?;
@@ -87,50 +100,54 @@ fn parse_row(mut record: csv::StringRecord) -> Option<Record> {
     })
 }
 
-pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
-    // let mut rdr = csv::Reader::from_path(csv_file).unwrap();
-    let mut rdr = csv::ReaderBuilder::new()
+// Warning: this is an abomination
+pub async fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
+    let file = File::open(csv_file.as_ref()).await.unwrap();
+    let rdr = csv_async::AsyncReaderBuilder::new()
+        .trim(csv_async::Trim::All)
+        .quoting(false)
         .delimiter(b';')
-        .from_path(csv_file)
-        .unwrap();
+        .has_headers(true)
+        .create_reader(file);
 
-    let records = rdr.records().flat_map(|rc| rc.ok().and_then(parse_row));
+    let records = rdr
+        .into_records()
+        .filter_map(|rc| async { rc.ok().and_then(parse_row) });
 
-    let mut prev = Image {
-        id: "".to_string(),
-        title: "".to_string(),
-        year: "".to_string(),
-        theme: "".to_string(),
-        ext: "".to_string(),
-        src: PathBuf::from(""),
-    };
+    let (images, _) = records
+        .filter_map(|rec| async {
+            let (src, ext) = get_src(&rec.id).await?;
 
-    let images = records.flat_map(|rec| {
-        let (src, ext) = get_src(&rec.id)?;
+            Some(Image {
+                id: rec.id,
+                title: rec.title,
+                year: rec.year,
+                theme: rec.theme,
+                ext,
+                src,
+            })
+        })
+        .fold(
+            (Vec::new(), "".to_string()),
+            |(mut images, prev_theme), mut image| async move {
+                if image.theme.is_empty() {
+                    image.theme = prev_theme.clone();
+                };
 
-        let image = Image {
-            id: rec.id,
-            title: rec.title,
-            year: rec.year,
-            theme: if rec.theme.is_empty() {
-                prev.theme.clone()
-            } else {
-                rec.theme
+                let theme = image.theme.clone();
+                images.push(image);
+                (images, theme)
             },
-            src,
-            ext,
-        };
-
-        prev = image.clone();
-
-        Some(image)
-    });
+        )
+        .await;
 
     images
+        .into_iter()
         .group_by(|i| i.theme.clone())
         .into_iter()
         .map(|(theme, imgs)| {
             let images = imgs.collect::<Vec<_>>();
+
             Category {
                 slug: Slug::new(&theme),
                 name: theme,
@@ -141,16 +158,12 @@ pub fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
         .collect()
 }
 
-fn get_src(id: &str) -> Option<(PathBuf, String)> {
-    let exts = ["jpg", "tif"];
+async fn get_src(id: &str) -> Option<(PathBuf, &'static str)> {
+    let path = PathBuf::from(format!("content/images/{}.jpg", id));
 
-    for ext in &exts {
-        let path = PathBuf::from(format!("content/images/{}.{}", id, ext));
-
-        if path.exists() {
-            return Some((path, ext.to_string()));
-        }
+    if path.exists().await {
+        Some((path, "jpg"))
+    } else {
+        None
     }
-
-    None
 }
