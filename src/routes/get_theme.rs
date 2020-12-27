@@ -1,14 +1,9 @@
-use serde_derive::Serialize;
-use tide::{Error, Request, Response};
+use tide::{Request, Response, Result};
 use tide_tera::prelude::*;
 
-use crate::{
-    data::{Category, Page},
-    db::Database,
-    Db, State,
-};
+use crate::State;
 
-pub async fn get_theme(req: Request<State>) -> tide::Result<tide::Response> {
+pub async fn get_theme(req: Request<State>) -> Result<Response> {
     let state = req.state();
     let theme_slug = req.param("theme")?;
 

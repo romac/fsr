@@ -1,31 +1,23 @@
-#![recursion_limit = "256"]
-#![feature(proc_macro_hygiene, decl_macro)]
-#![allow(dead_code, unreachable_code, unused_imports, unused_variables)]
+// #![allow(dead_code, unreachable_code, unused_imports, unused_variables)]
 
 mod data;
 mod db;
 mod load;
 mod routes;
 
-use std::fs::File;
-use std::path::Path;
-use std::thread;
 use std::time::Duration;
 
 use async_std::prelude::FutureExt;
 use async_std::task;
 
 use once_cell::sync::Lazy;
-use serde::Serialize;
 
 use tera::Tera;
 use tide_compress::CompressMiddleware;
 
-use crate::data::{Category, Page};
 use crate::db::Database;
 
 static DB_PATH: &str = "content";
-static TEMPLATES_PATH: &str = "template";
 
 static DB: Lazy<Database> = Lazy::new(|| Database::new(DB_PATH));
 

@@ -21,7 +21,7 @@ stop: ## Remotely stop the webserver
 	ssh -t fsr 'tmux send-keys -t fsr C-c ENTER'
 
 start: ## Remotely start the webserver
-	ssh -t fsr 'tmux send-keys -t fsr ./watch.sh ENTER'
+	ssh -t fsr 'tmux send-keys -t fsr ./fsr-rust ENTER'
 
 reload: ## Remotely reload the webserver
 	$(MAKE) stop

@@ -1,12 +1,7 @@
-use serde_derive::Serialize;
 use tide::{Error, Request, Response};
 use tide_tera::prelude::*;
 
-use crate::{
-    data::{Category, Page},
-    db::Database,
-    Db, State,
-};
+use crate::State;
 
 pub async fn get_page(req: Request<State>) -> Result<Response, Error> {
     let state = req.state();

@@ -1,15 +1,12 @@
 use async_std::{
     fs::{self, File},
     path::{Path, PathBuf},
-    stream::Stream,
-    task,
 };
 
 use futures::StreamExt;
 
 use comrak::{markdown_to_html, ComrakOptions};
 use itertools::Itertools;
-use yaml_rust::yaml::Yaml;
 
 use crate::data::*;
 
@@ -56,8 +53,6 @@ pub async fn load_page(path: impl AsRef<Path>) -> Option<Page> {
     opts.render.hardbreaks = true;
     opts.extension.autolink = true;
     opts.extension.header_ids = Some("header-".to_string());
-
-    let slug = Slug::new(&metadata.title);
 
     let page = Page {
         slug: Slug::new(&metadata.title),
