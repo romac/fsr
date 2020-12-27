@@ -68,30 +68,37 @@ async fn launch() -> tide::Result<()> {
     Ok(())
 }
 
-fn watch() -> impl notify::Watcher {
-    use notify::{RecommendedWatcher, RecursiveMode, Result, Watcher};
+async fn watch() {
+    DB.force_refresh().await;
 
-    let mut watcher: RecommendedWatcher = Watcher::new_immediate(|res| match res {
-        Ok(_) => {
-            task::block_on(DB.refresh());
-        }
-        Err(e) => {
-            println!("watch error: {:?}", e);
-        }
-    })
-    .unwrap();
-
-    watcher.watch(DB_PATH, RecursiveMode::Recursive).unwrap();
-
-    watcher
+    loop {
+        DB.force_refresh().delay(Duration::from_secs(5)).await;
+    }
 }
+
+// fn watch() -> impl notify::Watcher {
+//     use notify::{RecommendedWatcher, RecursiveMode, Result, Watcher};
+
+//     let mut watcher: RecommendedWatcher = Watcher::new_immediate(|res| match res {
+//         Ok(_) => {
+//             task::block_on(DB.refresh());
+//         }
+//         Err(e) => {
+//             println!("watch error: {:?}", e);
+//         }
+//     })
+//     .unwrap();
+
+//     watcher.watch(DB_PATH, RecursiveMode::Recursive).unwrap();
+
+//     watcher
+// }
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {
     tide::log::start();
 
-    DB.force_refresh().await;
-    let _watcher = watch();
+    let _ = task::spawn_local(watch());
 
     launch().await
 }
