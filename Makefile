@@ -1,42 +1,38 @@
+.DEFAULT_GOAL := help
 
-cross:
+REMOTE_DIR := /var/www/france-schmid.ch
+
+.PHONY: cross pull-content push-templates deploy stop start reload full help
+
+cross: ## Cross compile the web server for Linux x86-64
 	cross build --release --target x86_64-unknown-linux-gnu
 
-pull-content:
-	rsync -azvhe ssh fsr:/home/fsr/content/ _site/content/ 
+pull-content: ## Pull the content from the server
+	rsync -azvhe ssh fsr:${REMOTE_DIR}/content/ _site/content/ 
 
-push-templates:
-	rsync -azvhe ssh _site/templates/ fsr:/home/fsr/templates/
-	rsync -azvhe ssh _site/static/ fsr:/home/fsr/static/
+push-templates: ## Push the templates to the server
+	rsync -azvhe ssh _site/templates/ fsr:${REMOTE_DIR}/templates/
+	rsync -azvhe ssh _site/static/ fsr:${REMOTE_DIR}/static/
 
-deploy:
-	scp target/x86_64-unknown-linux-gnu/release/fsr-rust fsr:/home/fsr/
+deploy: ## Deploy the binary to the server
+	scp target/x86_64-unknown-linux-gnu/release/fsr-rust fsr:${REMOTE_DIR}/
 
-stop:
+stop: ## Remotely stop the webserver
 	ssh -t fsr 'tmux send-keys -t fsr C-c ENTER'
 
-start:
-	ssh -t fsr 'tmux send-keys -t fsr ./fsr-rust ENTER'
+start: ## Remotely start the webserver
+	ssh -t fsr 'tmux send-keys -t fsr ./watch.sh ENTER'
 
-reload:
+reload: ## Remotely reload the webserver
 	$(MAKE) stop
 	$(MAKE) start
 
-full:
+full: ## Alias for `cross`, `stop`, `deploy`, `start`
 	$(MAKE) cross
 	$(MAKE) stop
 	$(MAKE) deploy
 	$(MAKE) start
-	$(MAKE) reload
 
-help:
-	@echo make cross
-	@echo make pull-content
-	@echo make push-templates
-	@echo make stop
-	@echo make deploy
-	@echo make start
-	@echo make reload
-
-.PHONY: cross pull-content push-templates deploy stop start reload full help
+help: ## Show the available Makefile targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
