@@ -30,6 +30,7 @@ impl fmt::Display for Slug {
 pub struct Data {
     pub pages: Vec<Page>,
     pub categories: Vec<Category>,
+    pub virtual_expo: Vec<VirtualImage>,
     pub version: usize,
 }
 
@@ -38,6 +39,7 @@ impl Data {
         Self {
             pages: Vec::new(),
             categories: Vec::new(),
+            virtual_expo: Vec::new(),
             version: 0,
         }
     }
@@ -108,6 +110,24 @@ pub struct Image {
 }
 
 impl Image {
+    pub fn path(&self) -> String {
+        format!("{}.{}", self.id, self.ext)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize)]
+pub struct VirtualImage {
+    pub id: String,
+    pub title: String,
+    pub technique: String,
+    pub dimensions: String,
+    pub price: String,
+    pub ext: &'static str,
+    #[serde(with = "serde_pathbuf")]
+    pub src: PathBuf,
+}
+
+impl VirtualImage {
     pub fn path(&self) -> String {
         format!("{}.{}", self.id, self.ext)
     }

@@ -16,10 +16,12 @@ use crate::data::*;
 pub async fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
     let pages = load_pages(base_dir.as_ref().join("pages")).await;
     let categories = load_gallery(base_dir.as_ref().join("gallery.csv")).await;
+    let virtual_expo = load_virtual_expo(base_dir.as_ref().join("virtual.csv")).await;
 
     Data {
         pages,
         categories,
+        virtual_expo,
         version: 0,
     }
 }
@@ -156,6 +158,67 @@ pub async fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
             }
         })
         .collect()
+}
+
+#[derive(Clone, Debug)]
+struct VirtualRecord {
+    id: String,
+    title: String,
+    technique: String,
+    dimensions: String,
+    price: String,
+}
+
+fn parse_virtual_row(record: csv_async::StringRecord) -> Option<VirtualRecord> {
+    if record.len() < 5 {
+        return None;
+    }
+
+    let id = record.get(0)?;
+    let title = record.get(1)?;
+    let technique = record.get(2)?;
+    let dimensions = record.get(3)?;
+    let price = record.get(4)?;
+
+    if id.is_empty() {
+        return None;
+    }
+
+    Some(VirtualRecord {
+        id: id.to_string(),
+        title: title.to_string(),
+        technique: technique.to_string(),
+        dimensions: dimensions.to_string(),
+        price: price.to_string(),
+    })
+}
+
+pub async fn load_virtual_expo<P: AsRef<Path>>(csv_file: P) -> Vec<VirtualImage> {
+    let file = File::open(csv_file.as_ref()).await.unwrap();
+    let rdr = csv_async::AsyncReaderBuilder::new()
+        .trim(csv_async::Trim::All)
+        .quoting(false)
+        .delimiter(b',')
+        .has_headers(false)
+        .create_reader(file);
+
+    rdr.into_records()
+        .filter_map(|rc| async { rc.ok().and_then(parse_virtual_row) })
+        .filter_map(|rec| async {
+            let (src, ext) = get_src(&rec.id).await?;
+
+            Some(VirtualImage {
+                id: rec.id,
+                title: rec.title,
+                technique: rec.technique,
+                dimensions: rec.dimensions,
+                price: rec.price,
+                ext,
+                src,
+            })
+        })
+        .collect()
+        .await
 }
 
 async fn get_src(id: &str) -> Option<(PathBuf, &'static str)> {

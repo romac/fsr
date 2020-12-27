@@ -38,6 +38,9 @@
             <li>
               <a href="/">galerie</a>
             </li>
+            <li>
+              <a href="/expo-virtuelle">expo virtuelle</a>
+            </li>
             {% for page in pages | sort(attribute="index") %}
             {% if page.hidden %}{% continue %}{% endif %}
             <li>

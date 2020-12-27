@@ -53,9 +53,10 @@ async fn launch() -> tide::Result<()> {
     let mut app = tide::with_state(state);
     app.with(CompressMiddleware::new());
 
-    app.at("/").get(routes::index);
-    app.at("/:page").get(routes::get_page);
+    app.at("/").get(routes::get_index);
     app.at("/theme/:theme").get(routes::get_theme);
+    app.at("/expo-virtuelle").get(routes::get_virtual_expo);
+    app.at("/:page").get(routes::get_page);
 
     app.at("/static").serve_dir("static")?;
     app.at("/images").serve_dir("content/images")?;
@@ -72,6 +73,10 @@ async fn main() -> tide::Result<()> {
     tide::log::start();
 
     DB.force_refresh().await;
+    DB.read(|data| {
+        dbg!(&data.virtual_expo);
+    })
+    .await;
 
     task::spawn(launch());
 
