@@ -19,7 +19,7 @@ impl Database {
         Database {
             db: RwLock::new(Data::empty()),
             path: path.into(),
-            interval: Duration::from_secs(5),
+            interval: Duration::from_secs(1),
             last_refreshed: RwLock::new(None),
         }
     }
@@ -55,7 +55,7 @@ impl Database {
         match elapsed {
             Some(elapsed) if elapsed >= self.interval => self.force_refresh().await,
             None => self.force_refresh().await,
-            _ => (),
+            _ => println!("[debug] Not refreshing yet."),
         }
     }
 
@@ -71,5 +71,7 @@ impl Database {
             *data = new_data;
         })
         .await;
+
+        println!("[info] Content is fresh!");
     }
 }
