@@ -8,20 +8,20 @@ cross: ## Cross compile the web server for Linux x86-64
 	cross build --release --target x86_64-unknown-linux-gnu
 
 pull-content: ## Pull the content from the server
-	rsync -azvhe ssh fsr:${REMOTE_DIR}/content/ _site/content/ 
+	rsync -azvhe ssh fsr:${REMOTE_DIR}/content/ _site/content/
 
 push-templates: ## Push the templates to the server
 	rsync -azvhe ssh _site/templates/ fsr:${REMOTE_DIR}/templates/
 	rsync -azvhe ssh _site/static/ fsr:${REMOTE_DIR}/static/
 
 deploy: ## Deploy the binary to the server
-	scp target/x86_64-unknown-linux-gnu/release/fsr-rust fsr:${REMOTE_DIR}/
+	scp target/x86_64-unknown-linux-gnu/release/fsr fsr:${REMOTE_DIR}/
 
 stop: ## Remotely stop the webserver
 	ssh -t fsr 'tmux send-keys -t fsr C-c ENTER'
 
 start: ## Remotely start the webserver
-	ssh -t fsr 'tmux send-keys -t fsr ./fsr-rust ENTER'
+	ssh -t fsr 'tmux send-keys -t fsr ./fsr ENTER'
 
 reload: ## Remotely reload the webserver
 	$(MAKE) stop
