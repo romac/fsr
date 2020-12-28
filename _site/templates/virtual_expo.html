@@ -1,19 +1,25 @@
 {% extends "base.html" %}
 
 {% block title %}
-exposition virtuelle
+exposition en cours
 {% endblock title %}
 
 {% block content %}
+<div class="grid-x page page-expo-en-cours">
+  <div class="large-12 cell text-center">
+    <h3>exposition en cours à Champéry</h3>
+    <h3>du 18 décembre 2020 au 10 janvier 2021</h3>
+  </div>
+</div>
 <div class="images theme grid-x small-up-1 medium-up-2 large-up-3">
   {% for image in virtual_expo %}
     <div class="cell">
       <a
         data-fslightbox="virtual-expo"
-        data-caption="<h4>{{ image.title }} - {{ image.technique }} - {{ image.price }}</h4>"
+        data-caption="<h4>{{ image.title }} - {{ image.technique }} - {{ image.dimensions }} - {{ image.price }}</h4>"
         href="/images/{{ image.id }}.{{ image.ext }}">
           <img src="/images/{{ image.id }}.{{ image.ext }}" width="900" height="900" />
-          <span>{{ image.title }} - {{ image.technique }} - {{ image.price }}</span>
+          <span>{{ image.title }} - {{ image.technique }} - {{ image.dimensions }} - {{ image.price }}</span>
       </a>
     </div>
   {% endfor %}

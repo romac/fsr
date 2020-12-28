@@ -47,7 +47,7 @@ async fn launch() -> tide::Result<()> {
 
     app.at("/").get(routes::get_index);
     app.at("/theme/:theme").get(routes::get_theme);
-    app.at("/expo-virtuelle").get(routes::get_virtual_expo);
+    app.at("/expo-en-cours").get(routes::get_virtual_expo);
     app.at("/:page").get(routes::get_page);
 
     app.at("/static").serve_dir("static")?;
