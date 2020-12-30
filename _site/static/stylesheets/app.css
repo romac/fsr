@@ -165,3 +165,8 @@ footer {
 .grid-x.page.page-expo-en-cours {
   margin-top: 10px;
 }
+
+.page-expo-en-cours iframe {
+  width: 100%;
+  max-width: 640px;
+}
