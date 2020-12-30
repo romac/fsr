@@ -10,6 +10,9 @@ cross: ## Cross compile the web server for Linux x86-64
 pull-content: ## Pull the content from the server
 	rsync -azvhe ssh fsr:${REMOTE_DIR}/content/ _site/content/
 
+push-content: ## Push the content to the server
+	rsync -azvhe ssh _site/content/ fsr:${REMOTE_DIR}/content/
+
 push-templates: ## Push the templates to the server
 	rsync -azvhe ssh _site/templates/ fsr:${REMOTE_DIR}/templates/
 	rsync -azvhe ssh _site/static/ fsr:${REMOTE_DIR}/static/
