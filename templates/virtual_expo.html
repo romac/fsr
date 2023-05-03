@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}
+exposition en cours
+{% endblock title %}
+
+{% block content %}
+<div class="grid-x page page-expo-en-cours">
+  <div class="large-12 cell text-center">
+    <h3>exposition à Lutry</h3>
+    <h3>du 22 avril 2021 au 3 mai 2021</h3>
+    <div class="responsive-embed widescreen">
+      <video controls>
+        <source src="/static/videos/gallerie.m4v"  type="video/mp4"  />
+        <source src="/static/videos/gallerie.ogv"  type="video/ogg"  />
+        <source src="/static/videos/gallerie.webm" type="video/webm" />
+        &nbsp;
+      </video>
+    </div>
+  </div>
+</div>
+<div class="images theme grid-x small-up-1 medium-up-2 large-up-3">
+  {% for image in virtual_expo %}
+    <div class="cell">
+      <a
+        data-fslightbox="virtual-expo"
+        data-caption="<h4>{{ image.title }} - {{ image.technique }} - {{ image.dimensions }} - {{ image.price }}</h4>"
+        href="/images/{{ image.id }}.{{ image.ext }}">
+          <img src="/images/{{ image.id }}.{{ image.ext }}" width="900" height="900" />
+          <span>{{ image.title }} - {{ image.technique }} - {{ image.dimensions }} - {{ image.price }}</span>
+      </a>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endblock content %}
+
