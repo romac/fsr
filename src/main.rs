@@ -90,7 +90,7 @@ async fn watch() {
 async fn main() -> tide::Result<()> {
     tide::log::start();
 
-    let _ = task::spawn_local(watch());
+    task::spawn_local(watch());
 
     launch().await
 }
