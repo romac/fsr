@@ -1,27 +1,39 @@
-use tide::{Request, Response, Result};
-use tide_tera::prelude::*;
+use axum::{
+    extract::{Path, State},
+    response::{IntoResponse, Response},
+};
+use axum_template::RenderHtml;
+use serde::Serialize;
 
-use crate::State;
+use crate::{
+    data::{Category, Page},
+    AppState,
+};
 
-pub async fn get_theme(req: Request<State>) -> Result<Response> {
-    let state = req.state();
-    let theme_slug = req.param("theme")?;
-
+pub async fn get_theme(State(state): State<AppState>, Path(theme_slug): Path<String>) -> Response {
     let (data, category) = state
         .db
         .as_ref()
-        .read(|data| (data.clone(), data.find_category(theme_slug).cloned()))
+        .read(|data| (data.clone(), data.find_category(&theme_slug).cloned()))
         .await;
 
+    #[derive(Serialize)]
+    struct Data {
+        pages: Vec<Page>,
+        category: Option<Category>,
+    }
+
     if let Some(category) = category {
-        state.tera.render_response(
+        RenderHtml(
             "theme.html",
-            &context! {
-                "pages" => data.pages,
-                "category" => category,
+            state.engine,
+            Data {
+                pages: data.pages,
+                category: Some(category),
             },
         )
+        .into_response()
     } else {
-        crate::routes::not_found(req).await
+        crate::routes::not_found(State(state)).await.into_response()
     }
 }

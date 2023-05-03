@@ -3,19 +3,34 @@ mod db;
 mod load;
 mod routes;
 
-use std::path::Path;
+use std::path::PathBuf;
 
-use async_std::{
-    channel::{self, Receiver},
-    stream::StreamExt,
-    task,
+use axum::{
+    body::{self, Empty, Full},
+    extract::Path,
+    http::{header, HeaderValue, StatusCode},
+    response::Response,
+    routing::get,
+    Router,
 };
+use axum_template::engine::Engine;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
-
 use tera::Tera;
-use tide::log::{debug, error};
-use tide_compress::CompressMiddleware;
+use tokio::{
+    runtime::Handle,
+    select,
+    sync::mpsc::{channel, Receiver},
+    task,
+};
+use tower_http::{
+    compression::CompressionLayer,
+    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    LatencyUnit,
+};
+use tracing::{debug, error, info, warn, Level};
+
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 use crate::db::Database;
 
@@ -33,41 +48,87 @@ impl AsRef<Database> for Db {
 }
 
 #[derive(Clone)]
-pub struct State {
+pub struct AppState {
     pub db: Db,
-    pub tera: Tera,
+    pub engine: Engine<Tera>,
 }
 
-async fn launch() -> tide::Result<()> {
+async fn launch() -> Result<()> {
     let mut tera = Tera::new("templates/**/*")?;
     tera.autoescape_on(vec!["html"]);
 
-    let state = State { db: Db, tera };
+    let state = AppState {
+        db: Db,
+        engine: Engine::from(tera),
+    };
 
-    let mut app = tide::with_state(state);
-    app.with(CompressMiddleware::new());
+    let trace_layer = TraceLayer::new_for_http()
+        .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+        .on_request(DefaultOnRequest::new().level(Level::INFO))
+        .on_response(
+            DefaultOnResponse::new().level(Level::INFO), // .latency_unit(LatencyUnit::Micros),
+        );
 
-    app.at("/").get(routes::get_index);
-    app.at("/theme/:theme").get(routes::get_theme);
-    app.at("/expo-en-cours").get(routes::get_virtual_expo);
-    app.at("/:page").get(routes::get_page);
+    let app = Router::new()
+        .route("/", get(routes::get_index))
+        .route("/theme/:theme", get(routes::get_theme))
+        .route("/expo-en-cours", get(routes::get_virtual_expo))
+        .route("/:page", get(routes::get_page))
+        .route("/static/*path", get(move |path| serve_file("static", path)))
+        .route(
+            "/images/*path",
+            get(move |path| serve_file("content/images", path)),
+        )
+        .fallback(routes::not_found)
+        .layer(CompressionLayer::new())
+        .layer(trace_layer)
+        .with_state(state);
 
-    app.at("/static").serve_dir("static")?;
-    app.at("/images").serve_dir("content/images")?;
+    let quit_sig = async {
+        _ = tokio::signal::ctrl_c().await;
+        warn!("Initiating graceful shutdown");
+    };
 
-    app.at("*").all(routes::not_found);
+    let addr = "0.0.0.0:8081".parse().unwrap();
+    info!("Listening on http://{addr}");
 
-    app.listen("0.0.0.0:8081").await?;
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .with_graceful_shutdown(quit_sig)
+        .await?;
 
     Ok(())
 }
 
+async fn serve_file(dir: &str, Path(file): Path<String>) -> Response {
+    let path = PathBuf::from(dir).join(file);
+
+    let mime_type = mime_guess::from_path(&path).first_or_text_plain();
+
+    match tokio::fs::read(&path).await {
+        Err(_) => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(body::boxed(Empty::new()))
+            .unwrap(),
+        Ok(file) => Response::builder()
+            .status(StatusCode::OK)
+            .header(
+                header::CONTENT_TYPE,
+                HeaderValue::from_str(mime_type.as_ref()).unwrap(),
+            )
+            .body(body::boxed(Full::from(file)))
+            .unwrap(),
+    }
+}
+
 fn watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<notify::Event>>)> {
-    let (tx, rx) = channel::bounded(1);
+    let (tx, rx) = channel(1);
+
+    let handle = Handle::current();
 
     let watcher = RecommendedWatcher::new(
         move |res| {
-            task::block_on(async {
+            handle.block_on(async {
                 tx.send(res).await.unwrap();
             })
         },
@@ -77,31 +138,38 @@ fn watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<noti
     Ok((watcher, rx))
 }
 
-async fn watch(path: impl AsRef<Path>) -> notify::Result<()> {
+async fn watch(path: impl AsRef<std::path::Path>) -> notify::Result<()> {
     let (mut watcher, mut rx) = watcher()?;
 
     watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
 
-    while let Some(res) = rx.next().await {
-        match res {
-            Ok(event) => {
-                debug!("files changed: {:?}", event.paths);
-                DB.refresh().await;
+    loop {
+        select! {
+            _ = tokio::signal::ctrl_c() => return Ok(()),
+
+            res = rx.recv() => {
+                match res {
+                    None => return Ok(()),
+                    Some(Err(e)) => error!("watch error: {:?}", e),
+                    Some(Ok(event)) => {
+                        debug!("files changed: {:?}", event.paths);
+                        DB.refresh().await;
+                    }
+                }
             }
-            Err(e) => error!("watch error: {:?}", e),
         }
     }
-
-    Ok(())
 }
 
-#[async_std::main]
-async fn main() -> tide::Result<()> {
-    tide::log::with_level(tide::log::LevelFilter::Info);
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
 
     DB.refresh().await;
 
-    task::spawn_local(watch(DB_PATH));
+    task::spawn(watch(DB_PATH));
 
     launch().await
 }

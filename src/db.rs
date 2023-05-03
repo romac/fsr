@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-use async_std::sync::RwLock;
-use tide::log::{debug, info};
+use tokio::sync::RwLock;
+use tracing::{debug, info};
 
 use crate::data::*;
 use crate::load::load_data;

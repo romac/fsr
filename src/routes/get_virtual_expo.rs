@@ -1,13 +1,10 @@
-use tide::{Error, Request, Response};
-use tide_tera::prelude::*;
+use axum::{extract::State, response::IntoResponse};
+use axum_template::RenderHtml;
 
-use crate::State;
+use crate::AppState;
 
-pub async fn get_virtual_expo(req: Request<State>) -> Result<Response, Error> {
-    let state = req.state();
+pub async fn get_virtual_expo(State(state): State<AppState>) -> impl IntoResponse {
     let data = state.db.as_ref().read(|data| data.clone()).await;
 
-    state
-        .tera
-        .render_response("virtual_expo.html", &tera::Context::from_serialize(data)?)
+    RenderHtml("virtual_expo.html", state.engine, data)
 }

@@ -1,26 +1,24 @@
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
+use axum_template::RenderHtml;
 use serde::Serialize;
-use tide::{Error, Request, Response, StatusCode};
-use tide_tera::prelude::*;
 
-use crate::{data::Page, State};
+use crate::{data::Page, AppState};
 
 #[derive(Clone, Serialize)]
 struct Tmpl {
     pages: Vec<Page>,
 }
 
-pub async fn not_found(req: Request<State>) -> Result<Response, Error> {
-    let state = req.state();
+pub async fn not_found(State(state): State<AppState>) -> Response {
     let data = state.db.as_ref().read(|data| data.clone()).await;
 
-    let mut res = state.tera.render_response(
-        "not_found.html",
-        &context! {
-            "pages" => data.pages,
-        },
-    )?;
+    let mut res =
+        RenderHtml("not_found.html", state.engine, Tmpl { pages: data.pages }).into_response();
 
-    res.set_status(StatusCode::NotFound);
-
-    Ok(res)
+    *res.status_mut() = StatusCode::NOT_FOUND;
+    res
 }

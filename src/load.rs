@@ -1,12 +1,10 @@
-use async_std::{
-    fs::{self, File},
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use futures::StreamExt;
 
 use comrak::{markdown_to_html, ComrakOptions};
 use itertools::Itertools;
+use tokio::fs::{self, File};
 
 use crate::data::*;
 
@@ -23,20 +21,18 @@ pub async fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
     }
 }
 
-pub async fn load_pages<P: AsRef<Path>>(dir: P) -> Vec<Page> {
+pub async fn load_pages(dir: impl AsRef<Path>) -> Vec<Page> {
     let mut read_dir = fs::read_dir(dir).await.unwrap();
 
     let mut pages = vec![];
-    while let Some(entry) = read_dir.next().await {
-        if let Ok(entry) = entry {
-            if !entry.path().is_file().await {
-                continue;
-            }
+    while let Ok(Some(entry)) = read_dir.next_entry().await {
+        if !entry.path().is_file() {
+            continue;
+        }
 
-            let page = load_page(&entry.path()).await;
-            if let Some(page) = page {
-                pages.push(page);
-            }
+        let page = load_page(&entry.path()).await;
+        if let Some(page) = page {
+            pages.push(page);
         }
     }
 
@@ -218,10 +214,5 @@ pub async fn load_virtual_expo<P: AsRef<Path>>(csv_file: P) -> Vec<VirtualImage>
 
 async fn get_src(id: &str) -> Option<(PathBuf, &'static str)> {
     let path = PathBuf::from(format!("content/images/{}.jpg", id));
-
-    if path.exists().await {
-        Some((path, "jpg"))
-    } else {
-        None
-    }
+    path.exists().then_some((path, "jpg"))
 }

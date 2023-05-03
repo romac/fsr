@@ -1,6 +1,4 @@
-use std::fmt;
-
-use async_std::path::PathBuf;
+use std::{fmt, path::PathBuf};
 
 use serde_derive::Serialize;
 use yaml_rust::Yaml;
@@ -134,7 +132,8 @@ impl VirtualImage {
 }
 
 pub(crate) mod serde_pathbuf {
-    use async_std::path::PathBuf;
+    use std::path::PathBuf;
+
     use serde::{Serialize, Serializer};
 
     pub fn serialize<S>(path: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
