@@ -2,37 +2,23 @@ mod data;
 mod db;
 mod load;
 mod routes;
+mod serve;
+mod watch;
 
-use std::path::PathBuf;
-
-use axum::{
-    body::{self, Empty, Full},
-    extract::Path,
-    http::{header, HeaderValue, StatusCode},
-    response::Response,
-    routing::get,
-    Router,
-};
+use axum::{routing::get, Router};
 use axum_template::engine::Engine;
-use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
 use tera::Tera;
-use tokio::{
-    runtime::Handle,
-    select,
-    sync::mpsc::{channel, Receiver},
-    task,
-};
-use tower_http::{
-    compression::CompressionLayer,
-    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
-    LatencyUnit,
-};
-use tracing::{debug, error, info, warn, Level};
+use tokio::task;
+use tower_http::compression::CompressionLayer;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
+use tracing::{info, warn, Level};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 use crate::db::Database;
+use crate::serve::serve_file;
+use crate::watch::watch;
 
 static DB_PATH: &str = "content";
 
@@ -98,67 +84,6 @@ async fn launch() -> Result<()> {
         .await?;
 
     Ok(())
-}
-
-async fn serve_file(dir: &str, Path(file): Path<String>) -> Response {
-    let path = PathBuf::from(dir).join(file);
-
-    let mime_type = mime_guess::from_path(&path).first_or_text_plain();
-
-    match tokio::fs::read(&path).await {
-        Err(_) => Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(body::boxed(Empty::new()))
-            .unwrap(),
-        Ok(file) => Response::builder()
-            .status(StatusCode::OK)
-            .header(
-                header::CONTENT_TYPE,
-                HeaderValue::from_str(mime_type.as_ref()).unwrap(),
-            )
-            .body(body::boxed(Full::from(file)))
-            .unwrap(),
-    }
-}
-
-fn watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<notify::Event>>)> {
-    let (tx, rx) = channel(1);
-
-    let handle = Handle::current();
-
-    let watcher = RecommendedWatcher::new(
-        move |res| {
-            handle.block_on(async {
-                tx.send(res).await.unwrap();
-            })
-        },
-        Config::default(),
-    )?;
-
-    Ok((watcher, rx))
-}
-
-async fn watch(path: impl AsRef<std::path::Path>) -> notify::Result<()> {
-    let (mut watcher, mut rx) = watcher()?;
-
-    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
-
-    loop {
-        select! {
-            _ = tokio::signal::ctrl_c() => return Ok(()),
-
-            res = rx.recv() => {
-                match res {
-                    None => return Ok(()),
-                    Some(Err(e)) => error!("watch error: {:?}", e),
-                    Some(Ok(event)) => {
-                        debug!("files changed: {:?}", event.paths);
-                        DB.refresh().await;
-                    }
-                }
-            }
-        }
-    }
 }
 
 #[tokio::main(flavor = "current_thread")]
