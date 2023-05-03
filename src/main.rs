@@ -57,7 +57,7 @@ async fn launch() -> tide::Result<()> {
 
     app.at("*").all(routes::not_found);
 
-    app.listen("127.0.0.1:8081").await?;
+    app.listen("0.0.0.0:8081").await?;
 
     Ok(())
 }
@@ -98,6 +98,8 @@ async fn watch(path: impl AsRef<Path>) -> notify::Result<()> {
 #[async_std::main]
 async fn main() -> tide::Result<()> {
     tide::log::with_level(tide::log::LevelFilter::Info);
+
+    DB.refresh().await;
 
     task::spawn_local(watch(DB_PATH));
 
