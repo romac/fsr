@@ -82,7 +82,6 @@ pub struct Page {
     pub title: String,
     pub slug: Slug,
     pub hidden: bool,
-    #[serde(with = "serde_pathbuf")]
     pub path: PathBuf,
     pub content: String,
     pub html: String,
@@ -103,7 +102,6 @@ pub struct Image {
     pub title: String,
     pub theme: String,
     pub ext: &'static str,
-    #[serde(with = "serde_pathbuf")]
     pub src: PathBuf,
 }
 
@@ -121,25 +119,11 @@ pub struct VirtualImage {
     pub dimensions: String,
     pub price: String,
     pub ext: &'static str,
-    #[serde(with = "serde_pathbuf")]
     pub src: PathBuf,
 }
 
 impl VirtualImage {
     pub fn path(&self) -> String {
         format!("{}.{}", self.id, self.ext)
-    }
-}
-
-pub(crate) mod serde_pathbuf {
-    use std::path::PathBuf;
-
-    use serde::{Serialize, Serializer};
-
-    pub fn serialize<S>(path: &PathBuf, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        std::path::Path::serialize(path.as_path().into(), serializer)
     }
 }
