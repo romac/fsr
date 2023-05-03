@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use async_std::sync::RwLock;
+use tide::log::{debug, info};
 
 use crate::data::*;
 use crate::load::load_data;
@@ -41,25 +42,23 @@ impl Database {
     pub async fn refresh(&self) {
         let now = Instant::now();
 
-        let elapsed = {
-            let last_refreshed = self.last_refreshed.read().await;
-            last_refreshed.map(|lr| now.duration_since(lr))
-        };
+        let elapsed = self
+            .last_refreshed
+            .read()
+            .await
+            .map(|lr| now.duration_since(lr));
 
-        {
-            let mut last_refreshed = self.last_refreshed.write().await;
-            *last_refreshed = Some(now);
-        }
+        *self.last_refreshed.write().await = Some(now);
 
         match elapsed {
             Some(elapsed) if elapsed >= self.interval => self.force_refresh().await,
             None => self.force_refresh().await,
-            _ => println!("[debug] Not refreshing yet."),
+            _ => debug!("Not refreshing yet"),
         }
     }
 
     pub async fn force_refresh(&self) {
-        println!("[info] Refreshing content...");
+        info!("Refreshing content...");
 
         let version = self.db.read().await.version;
 
@@ -70,7 +69,5 @@ impl Database {
             *data = new_data;
         })
         .await;
-
-        println!("[info] Content is fresh!");
     }
 }

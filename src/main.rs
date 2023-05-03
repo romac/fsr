@@ -1,18 +1,20 @@
-// #![allow(dead_code, unreachable_code, unused_imports, unused_variables)]
-
 mod data;
 mod db;
 mod load;
 mod routes;
 
-use std::time::Duration;
+use std::path::Path;
 
-use async_std::prelude::FutureExt;
-use async_std::task;
-
+use async_std::{
+    channel::{self, Receiver},
+    stream::StreamExt,
+    task,
+};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use once_cell::sync::Lazy;
 
 use tera::Tera;
+use tide::log::{debug, error};
 use tide_compress::CompressMiddleware;
 
 use crate::db::Database;
@@ -60,37 +62,44 @@ async fn launch() -> tide::Result<()> {
     Ok(())
 }
 
-async fn watch() {
-    DB.force_refresh().await;
+fn watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<notify::Event>>)> {
+    let (tx, rx) = channel::bounded(1);
 
-    loop {
-        DB.force_refresh().delay(Duration::from_secs(5)).await;
-    }
+    let watcher = RecommendedWatcher::new(
+        move |res| {
+            task::block_on(async {
+                tx.send(res).await.unwrap();
+            })
+        },
+        Config::default(),
+    )?;
+
+    Ok((watcher, rx))
 }
 
-// fn watch() -> impl notify::Watcher {
-//     use notify::{RecommendedWatcher, RecursiveMode, Result, Watcher};
+async fn watch(path: impl AsRef<Path>) -> notify::Result<()> {
+    let (mut watcher, mut rx) = watcher()?;
 
-//     let mut watcher: RecommendedWatcher = Watcher::new_immediate(|res| match res {
-//         Ok(_) => {
-//             task::block_on(DB.refresh());
-//         }
-//         Err(e) => {
-//             println!("watch error: {:?}", e);
-//         }
-//     })
-//     .unwrap();
+    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
 
-//     watcher.watch(DB_PATH, RecursiveMode::Recursive).unwrap();
+    while let Some(res) = rx.next().await {
+        match res {
+            Ok(event) => {
+                debug!("files changed: {:?}", event.paths);
+                DB.refresh().await;
+            }
+            Err(e) => error!("watch error: {:?}", e),
+        }
+    }
 
-//     watcher
-// }
+    Ok(())
+}
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {
-    tide::log::start();
+    tide::log::with_level(tide::log::LevelFilter::Info);
 
-    task::spawn_local(watch());
+    task::spawn_local(watch(DB_PATH));
 
     launch().await
 }
