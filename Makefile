@@ -12,7 +12,7 @@ push-data: ## Push the data to the server
 	rsync -azvhe ssh _data/ ${REMOTE}:${REMOTE_DIR}/_data/
 
 deploy: ## Deploy the binary to the server
-	scp target/x86_64-unknown-linux-gnu/release/fsr fsr:${REMOTE_DIR}/
+	echo "TODO"
 
 stop: ## Remotely stop the webserver
 	ssh -t fsr 'tmux send-keys -t fsr C-c ENTER'
