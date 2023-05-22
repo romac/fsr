@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 
+REMOTE := romac.me
 REMOTE_DIR := /var/www/france-schmid.ch
 
 .PHONY: cross pull-content push-templates deploy stop start reload full help
@@ -8,14 +9,14 @@ cross: ## Cross compile the web server for Linux x86-64
 	cross build --release --target x86_64-unknown-linux-gnu
 
 pull-content: ## Pull the content from the server
-	rsync -azvhe ssh fsr:${REMOTE_DIR}/content/ _site/content/
+	rsync -azvhe ssh ${REMOTE}:${REMOTE_DIR}/content/ content/
 
 push-content: ## Push the content to the server
-	rsync -azvhe ssh _site/content/ fsr:${REMOTE_DIR}/content/
+	rsync -azvhe ssh content/ ${REMOTE}:${REMOTE_DIR}/content/
 
-push-templates: ## Push the templates to the server
-	rsync -azvhe ssh _site/templates/ fsr:${REMOTE_DIR}/templates/
-	rsync -azvhe ssh _site/static/ fsr:${REMOTE_DIR}/static/
+push-static: ## Push the static assets to the server
+	rsync -azvhe ssh templates/ ${REMOTE}:${REMOTE_DIR}/templates/
+	rsync -azvhe ssh static/ ${REMOTE}:${REMOTE_DIR}/static/
 
 deploy: ## Deploy the binary to the server
 	scp target/x86_64-unknown-linux-gnu/release/fsr fsr:${REMOTE_DIR}/
