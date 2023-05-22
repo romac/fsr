@@ -3,7 +3,14 @@
 REMOTE := romac.me
 REMOTE_DIR := /var/www/france-schmid.ch
 
-.PHONY: pull-content push-templates deploy stop start reload full help
+.PHONY: docker-build docker-push pull-data stop start reload full help
+
+docker-build: ## Build the latest Docker image
+	docker build -t fsr:latest .
+
+docker-push: ## Push the latest Docker image to GHCR
+	docker tag fsr:latest ghcr.io/romac/fsr:latest
+	docker push ghcr.io/romac/fsr:latest
 
 pull-data: ## Pull the data from the server
 	rsync -azvhe ssh ${REMOTE}:${REMOTE_DIR}/_data/ _data

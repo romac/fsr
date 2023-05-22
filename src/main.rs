@@ -84,13 +84,12 @@ async fn launch() -> Result<()> {
 }
 
 fn setup_tracing() {
-    use tracing::metadata::LevelFilter;
     use tracing_subscriber::{fmt, EnvFilter};
 
     fmt::fmt()
         .with_env_filter(
             EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
+                .with_default_directive("fsr=info".parse().unwrap())
                 .from_env_lossy(),
         )
         .init();

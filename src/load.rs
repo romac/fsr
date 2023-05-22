@@ -5,13 +5,20 @@ use futures::StreamExt;
 use comrak::{markdown_to_html, ComrakOptions};
 use itertools::Itertools;
 use tokio::fs::{self, File};
+use tracing::info;
 
 use crate::data::*;
 
 pub async fn load_data<P: AsRef<Path>>(base_dir: P) -> Data {
-    let pages = load_pages(base_dir.as_ref().join("pages")).await;
-    let categories = load_gallery(base_dir.as_ref().join("gallery.csv")).await;
-    let virtual_expo = load_virtual_expo(base_dir.as_ref().join("virtual.csv")).await;
+    let base_dir = base_dir.as_ref();
+
+    let pages = load_pages(base_dir.join("pages")).await;
+    let categories = load_gallery(base_dir, &base_dir.join("gallery.csv")).await;
+    let virtual_expo = load_virtual_expo(base_dir, &base_dir.join("virtual.csv")).await;
+
+    info!("Loaded {} pages", pages.len());
+    info!("Loaded {} categories", categories.len());
+    info!("Loaded {} virtual images", virtual_expo.len());
 
     Data {
         pages,
@@ -39,8 +46,8 @@ pub async fn load_pages(dir: impl AsRef<Path>) -> Vec<Page> {
     pages
 }
 
-pub async fn load_page(path: impl AsRef<Path>) -> Option<Page> {
-    let contents = fs::read_to_string(path.as_ref()).await.ok()?;
+pub async fn load_page(path: &Path) -> Option<Page> {
+    let contents = fs::read_to_string(path).await.ok()?;
     let (front, body) = frontmatter::parse_and_find_content(&contents).ok()?;
     let metadata = PageMetadata::from_yaml(front?)?;
 
@@ -55,7 +62,7 @@ pub async fn load_page(path: impl AsRef<Path>) -> Option<Page> {
         index: metadata.index,
         title: metadata.title,
         hidden: metadata.hidden,
-        path: path.as_ref().to_owned(),
+        path: path.to_owned(),
         content: body.to_string(),
         html: markdown_to_html(body, &opts),
     };
@@ -94,8 +101,9 @@ fn parse_row(record: csv_async::StringRecord) -> Option<Record> {
 }
 
 // Warning: this is an abomination
-pub async fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
-    let file = File::open(csv_file.as_ref()).await.unwrap();
+pub async fn load_gallery(base_dir: &Path, csv_file: &Path) -> Vec<Category> {
+    let file = File::open(csv_file).await.unwrap();
+
     let rdr = csv_async::AsyncReaderBuilder::new()
         .trim(csv_async::Trim::All)
         .quoting(false)
@@ -109,7 +117,7 @@ pub async fn load_gallery<P: AsRef<Path>>(csv_file: P) -> Vec<Category> {
 
     let (images, _) = records
         .filter_map(|rec| async {
-            let (src, ext) = get_src(&rec.id).await?;
+            let (src, ext) = get_src(base_dir, &rec.id).await?;
 
             Some(Image {
                 id: rec.id,
@@ -184,8 +192,8 @@ fn parse_virtual_row(record: csv_async::StringRecord) -> Option<VirtualRecord> {
     })
 }
 
-pub async fn load_virtual_expo<P: AsRef<Path>>(csv_file: P) -> Vec<VirtualImage> {
-    let file = File::open(csv_file.as_ref()).await.unwrap();
+pub async fn load_virtual_expo(base_dir: &Path, csv_file: &Path) -> Vec<VirtualImage> {
+    let file = File::open(csv_file).await.unwrap();
     let rdr = csv_async::AsyncReaderBuilder::new()
         .trim(csv_async::Trim::All)
         .quoting(false)
@@ -196,7 +204,7 @@ pub async fn load_virtual_expo<P: AsRef<Path>>(csv_file: P) -> Vec<VirtualImage>
     rdr.into_records()
         .filter_map(|rc| async { rc.ok().and_then(parse_virtual_row) })
         .filter_map(|rec| async {
-            let (src, ext) = get_src(&rec.id).await?;
+            let (src, ext) = get_src(base_dir, &rec.id).await?;
 
             Some(VirtualImage {
                 id: rec.id,
@@ -212,7 +220,7 @@ pub async fn load_virtual_expo<P: AsRef<Path>>(csv_file: P) -> Vec<VirtualImage>
         .await
 }
 
-async fn get_src(id: &str) -> Option<(PathBuf, &'static str)> {
-    let path = PathBuf::from(format!("content/images/{}.jpg", id));
+async fn get_src(base_dir: &Path, id: &str) -> Option<(PathBuf, &'static str)> {
+    let path = base_dir.join(format!("images/{}.jpg", id));
     path.exists().then_some((path, "jpg"))
 }
