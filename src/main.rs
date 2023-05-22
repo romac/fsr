@@ -83,11 +83,31 @@ async fn launch() -> Result<()> {
     Ok(())
 }
 
+fn setup_tracing() {
+    use tracing::metadata::LevelFilter;
+    use tracing_subscriber::{fmt, EnvFilter};
+
+    fmt::fmt()
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
+        .init();
+}
+
+fn setup_signal_handler() {
+    ctrlc::set_handler(move || {
+        info!("Received SIGINT, shutting down");
+        std::process::exit(0);
+    })
+    .expect("failed to install signal handler");
+}
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .init();
+    setup_tracing();
+    setup_signal_handler();
 
     DB.refresh().await;
 
