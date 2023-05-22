@@ -3,20 +3,13 @@
 REMOTE := romac.me
 REMOTE_DIR := /var/www/france-schmid.ch
 
-.PHONY: cross pull-content push-templates deploy stop start reload full help
+.PHONY: pull-content push-templates deploy stop start reload full help
 
-cross: ## Cross compile the web server for Linux x86-64
-	cross build --release --target x86_64-unknown-linux-gnu
+pull-data: ## Pull the data from the server
+	rsync -azvhe ssh ${REMOTE}:${REMOTE_DIR}/_data/ _data
 
-pull-content: ## Pull the content from the server
-	rsync -azvhe ssh ${REMOTE}:${REMOTE_DIR}/content/ content/
-
-push-content: ## Push the content to the server
-	rsync -azvhe ssh content/ ${REMOTE}:${REMOTE_DIR}/content/
-
-push-static: ## Push the static assets to the server
-	rsync -azvhe ssh templates/ ${REMOTE}:${REMOTE_DIR}/templates/
-	rsync -azvhe ssh static/ ${REMOTE}:${REMOTE_DIR}/static/
+push-data: ## Push the data to the server
+	rsync -azvhe ssh _data/ ${REMOTE}:${REMOTE_DIR}/_data/
 
 deploy: ## Deploy the binary to the server
 	scp target/x86_64-unknown-linux-gnu/release/fsr fsr:${REMOTE_DIR}/
@@ -31,8 +24,7 @@ reload: ## Remotely reload the webserver
 	$(MAKE) stop
 	$(MAKE) start
 
-full: ## Alias for `cross`, `stop`, `deploy`, `start`
-	$(MAKE) cross
+full: ## Alias for `stop`, `deploy`, `start`
 	$(MAKE) stop
 	$(MAKE) deploy
 	$(MAKE) start

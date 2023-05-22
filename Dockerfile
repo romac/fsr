@@ -11,7 +11,7 @@ COPY    Cargo.toml Cargo.lock ./
 RUN     --mount=type=cache,target=/root/.rustup \
         --mount=type=cache,target=/root/.cargo/registry \
         --mount=type=cache,target=/root/.cargo/git \
-		    --mount=type=cache,target=/usr/src/target \
+        --mount=type=cache,target=/usr/src/target \
         cargo build --release
 COPY    src src
 RUN     touch src/main.rs
@@ -22,8 +22,6 @@ FROM gcr.io/distroless/cc AS runtime
 
 WORKDIR /app
 COPY    --from=builder /usr/src/fsr/fsr ./
-COPY    static    static
-COPY    templates templates
 
 EXPOSE 8081
 CMD    ["/app/fsr"]

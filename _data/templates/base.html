@@ -1,0 +1,77 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>france schmid | {% block title %}{% endblock title %}</title>
+
+    <meta name="copyright" content="Copyright, France Schmid, 2006-2020">
+    <meta name="keywords" content="france,schmid,ruetschi,galerie,aquarelle,peinture,artiste,croquis,montagne,lac">
+
+    <link rel="stylesheet" href="/static/stylesheets/foundation.min.css">
+    <link rel="stylesheet" href="/static/stylesheets/app.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa&display=swap">
+  </head>
+
+  <body>
+    <a id="top" />
+    <div class="grid-container full fluid">
+      <header class="grid-x text-center">
+        <div class="large-12 cell">
+          <h1>
+            <a rel="home" href="/">france schmid</a>
+          </h1>
+        </div>
+      </header>
+
+      <nav class="grid-x">
+        <div class="large-12 cell">
+          <div class="title-bar" data-responsive-toggle="navigation" data-hide-for="medium">
+            <div class="auto-center">
+              <button class="menu-icon" type="button" data-toggle></button>
+              <div class="title-bar-title" data-toggle>Menu</div>
+            </div>
+          </div>
+          <ul class="menu align-center simple vertical medium-horizontal" id="navigation">
+            <li>
+              <a href="/">galerie</a>
+            </li>
+	    <!--
+            <li>
+              <a href="/expo-en-cours">expo en cours</a>
+            </li>
+	    -->
+            {% for page in pages | sort(attribute="index") %}
+            {% if page.hidden %}{% continue %}{% endif %}
+            <li>
+              <a href="/{{ page.slug }}">{{ page.title }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </nav>
+
+      {% block content %}{% endblock content %}
+
+      <footer class="grid-x text-center">
+        <div class="large-12 cell back-to-top">
+          <a href="#top">↑ Retour en haut</a>
+        </div>
+        <div class="large-12 cell">
+          &copy; Copyright 2006-2020 France Schmid, tous droits réservés
+        </div>
+      </footer>
+    </div>
+
+    <script src="/static/javascripts/app.min.js"></script>
+    <script src="/static/javascripts/fslightbox.js"></script>
+
+    <noscript>
+        <img src="https://stats.romac.me/ingress/60b05b47-6556-4145-a695-24c8a958ebce/pixel.gif">
+    </noscript>
+    <script defer src="https://stats.romac.me/ingress/60b05b47-6556-4145-a695-24c8a958ebce/script.js"></script>
+  </body>
+</html>
+

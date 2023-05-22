@@ -12,7 +12,7 @@ use tera::Tera;
 use tokio::task;
 use tower_http::compression::CompressionLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
-use tracing::{info, warn, Level};
+use tracing::{info, Level};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -20,7 +20,7 @@ use crate::db::Database;
 use crate::serve::serve_file;
 use crate::watch::watch;
 
-static DB_PATH: &str = "content";
+static DB_PATH: &str = "_data/content";
 
 static DB: Lazy<Database> = Lazy::new(|| Database::new(DB_PATH));
 
@@ -40,7 +40,7 @@ pub struct AppState {
 }
 
 async fn launch() -> Result<()> {
-    let mut tera = Tera::new("templates/**/*")?;
+    let mut tera = Tera::new("_data/templates/**/*")?;
     tera.autoescape_on(vec!["html"]);
 
     let state = AppState {
@@ -60,27 +60,24 @@ async fn launch() -> Result<()> {
         .route("/theme/:theme", get(routes::get_theme))
         .route("/expo-en-cours", get(routes::get_virtual_expo))
         .route("/:page", get(routes::get_page))
-        .route("/static/*path", get(move |path| serve_file("static", path)))
+        .route(
+            "/static/*path",
+            get(move |path| serve_file("_data/static", path)),
+        )
         .route(
             "/images/*path",
-            get(move |path| serve_file("content/images", path)),
+            get(move |path| serve_file("_data/content/images", path)),
         )
         .fallback(routes::not_found)
         .layer(CompressionLayer::new())
         .layer(trace_layer)
         .with_state(state);
 
-    let quit_sig = async {
-        _ = tokio::signal::ctrl_c().await;
-        warn!("Initiating graceful shutdown");
-    };
-
     let addr = "0.0.0.0:8081".parse().unwrap();
     info!("Listening on http://{addr}");
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .with_graceful_shutdown(quit_sig)
         .await?;
 
     Ok(())
