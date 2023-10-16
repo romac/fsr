@@ -40,7 +40,7 @@ a:hover {
 }
 
 header a:hover {
-  text-decoration: none;
+  /* text-decoration: none; */
 }
 
 header, nav {
@@ -169,4 +169,8 @@ footer {
 .grid-x.page {
   padding-left: 1.5em;
   padding-right: 1.5em;
+}
+
+.page-expositions h2 {
+  margin-top: 2em;
 }
