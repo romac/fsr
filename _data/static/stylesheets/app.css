@@ -5,6 +5,10 @@ body {
   font-size: 18px;
 }
 
+a {
+  cursor: pointer;
+}
+
 h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
   font-family: 'Comfortaa';
 }
@@ -118,7 +122,8 @@ footer {
 }
 
 .theme a span {
-  display: none;
+  /* display: none; */
+  display: block;
   position: absolute;
   bottom: 0%;
   left: 0;
@@ -135,22 +140,18 @@ footer {
   display: block;
 }
 
+.images {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .no-js #navigation {
   display: none;
 }
 
 .no-js .title-bar {
   display: block;
-}
-
-@media screen and (min-width: 40em) {
-  .no-js #navigation {
-    display: block;
-  }
-
-  .no-js .title-bar {
-    display: none;
-  }
 }
 
 .back-to-top {
@@ -174,3 +175,14 @@ footer {
 .page-expositions h2 {
   margin-top: 2em;
 }
+
+@media screen and (min-width: 40em) {
+  .no-js #navigation {
+    display: block;
+  }
+
+  .no-js .title-bar {
+    display: none;
+  }
+}
+
