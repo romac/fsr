@@ -73,12 +73,11 @@ async fn launch() -> Result<()> {
         .layer(trace_layer)
         .with_state(state);
 
-    let addr = "0.0.0.0:8081".parse().unwrap();
-    info!("Listening on http://{addr}");
+    let addr = "0.0.0.0:8081";
+    let listener = tokio::net::TcpListener::bind(addr).await?;
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    info!("Listening on http://{addr}");
+    axum::serve(listener, app).await?;
 
     Ok(())
 }

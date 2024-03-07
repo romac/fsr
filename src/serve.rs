@@ -1,29 +1,26 @@
 use std::path::PathBuf;
 
 use axum::{
-    body::{self, Empty, Full},
+    body::Body,
     extract::Path,
-    http::{header, HeaderValue, StatusCode},
+    http::{header::CONTENT_TYPE, StatusCode},
     response::Response,
 };
 
 pub async fn serve_file(dir: &str, Path(file): Path<String>) -> Response {
-    let path = PathBuf::from(dir).join(file);
-
+    let path = PathBuf::from(dir).join(&file);
     let mime_type = mime_guess::from_path(&path).first_or_text_plain();
 
     match tokio::fs::read(&path).await {
         Err(_) => Response::builder()
             .status(StatusCode::NOT_FOUND)
-            .body(body::boxed(Empty::new()))
+            .body(Body::from(format!("File not found: {file}")))
             .unwrap(),
+
         Ok(file) => Response::builder()
             .status(StatusCode::OK)
-            .header(
-                header::CONTENT_TYPE,
-                HeaderValue::from_str(mime_type.as_ref()).unwrap(),
-            )
-            .body(body::boxed(Full::from(file)))
+            .header(CONTENT_TYPE, mime_type.as_ref())
+            .body(Body::from(file))
             .unwrap(),
     }
 }
