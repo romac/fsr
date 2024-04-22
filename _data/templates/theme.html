@@ -16,7 +16,7 @@
         data-fslightbox="{{ category.slug }}"
         data-caption="<h4>{{ image.title }} - {{ image.year }}</h4>"
         href="/images/{{ image.id }}.{{ image.ext }}">
-          <img src="/images/{{ image.id }}.{{ image.ext }}" width="900" height="900" />
+          <img src="/images/{{ image.id }}.{{ image.ext }}" width="900" height="900" loading="lazy" />
           <span>{{ image.title }} - {{ image.year }}</span>
       </a>
     </div>

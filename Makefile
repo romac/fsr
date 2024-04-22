@@ -4,7 +4,7 @@ REMOTE     := romac.me
 REMOTE_DIR := /home/fsr/site
 LOCAL_DIR  := _data
 
-.PHONY: docker-build docker-push pull-data reload help
+.PHONY: docker-build docker-push docker-pull pull-data reload help
 
 docker-build: ## Build the latest Docker image
 	docker build -t fsr:latest .
@@ -12,6 +12,9 @@ docker-build: ## Build the latest Docker image
 docker-push: ## Push the latest Docker image to GHCR
 	docker tag fsr:latest ghcr.io/romac/fsr:latest
 	docker push ghcr.io/romac/fsr:latest
+
+docker-pull: ## Pull the latest Docker image from GHCR
+	ssh ${REMOTE} "docker pull ghcr.io/romac/fsr:latest"
 
 reload: ## Remotely reload the webserver
 	ssh ${REMOTE} "cd ${REMOTE_DIR}/.. && docker compose pull fsr && docker compose up -d"

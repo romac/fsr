@@ -9,7 +9,7 @@ artiste-peintre
   {% for category in categories %}
     <div class="cell">
       <a href="/theme/{{ category.slug }}">
-        <img src="/images/{{ category.thumbnail.id }}.{{ category.thumbnail.ext }}" width="900" height="900" />
+        <img src="/images/{{ category.thumbnail.id }}.{{ category.thumbnail.ext }}" width="900" height="900" loading="lazy" />
         <span>{{ category.name }}</span>
       </a>
     </div>
