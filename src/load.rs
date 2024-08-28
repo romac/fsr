@@ -144,7 +144,7 @@ pub async fn load_gallery(base_dir: &Path, csv_file: &Path) -> Vec<Category> {
 
     images
         .into_iter()
-        .group_by(|i| i.theme.clone())
+        .chunk_by(|i| i.theme.clone())
         .into_iter()
         .map(|(theme, imgs)| {
             let images = imgs.collect::<Vec<_>>();

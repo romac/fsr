@@ -1,15 +1,20 @@
+#![warn(unused_extern_crates)]
+
 mod data;
 mod db;
 mod load;
 mod routes;
 mod serve;
-mod watch;
+// mod watch;
+
+use std::time::Duration;
 
 use axum::{routing::get, Router};
 use axum_template::engine::Engine;
 use once_cell::sync::Lazy;
 use tera::Tera;
 use tokio::task;
+use tokio::time::sleep;
 use tower_http::compression::CompressionLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tracing::{info, Level};
@@ -18,7 +23,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 use crate::db::Database;
 use crate::serve::serve_file;
-use crate::watch::watch;
+// use crate::watch::watch;
 
 static DB_PATH: &str = "_data/content";
 
@@ -109,7 +114,15 @@ async fn main() -> Result<()> {
 
     DB.refresh().await;
 
-    task::spawn(watch(DB_PATH));
+    // task::spawn(watch(DB_PATH));
+    task::spawn(refresh());
 
     launch().await
+}
+
+async fn refresh() {
+    loop {
+        sleep(Duration::from_secs(5)).await;
+        DB.refresh().await;
+    }
 }
