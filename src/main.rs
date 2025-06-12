@@ -63,7 +63,6 @@ async fn launch() -> Result<()> {
     let app = Router::new()
         .route("/", get(routes::get_index))
         .route("/theme/:theme", get(routes::get_theme))
-        .route("/expo-en-cours", get(routes::get_virtual_expo))
         .route("/:page", get(routes::get_page))
         .route(
             "/static/*path",
