@@ -4,6 +4,10 @@
 {{ page.title }}
 {% endblock title %}
 
+{% block canonical %}
+<link rel="canonical" href="https://france-schmid.ch/{{ page.slug }}" />
+{% endblock canonical %}
+
 {% block content %}
 <div class="grid-x page page-{{ page.slug }}">
   <div class="large-12 cell">
