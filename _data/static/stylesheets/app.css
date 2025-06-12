@@ -177,16 +177,22 @@ footer {
 }
 
 #back {
-  display: none;
-  position: fixed;
+  display: block;
+  position: absolute;
+  top: 3.7em;
   padding: 0.5em 0.5em 0.3em 0.3em;
-  background-color: rgba(52, 44, 45, 0.8);
   color: white;
+  /* background-color: rgba(52, 44, 45, 0.8); */
+}
+
+.menu.simple li + li {
+  margin-left: 0;
 }
 
 @media screen and (min-width: 40em) {
   #back {
     display: block;
+    top: 0;
   }
 
   .no-js #navigation {
@@ -195,6 +201,10 @@ footer {
 
   .no-js .title-bar {
     display: none;
+  }
+
+  .menu.simple li + li {
+     margin-left: 1rem;
   }
 }
 
